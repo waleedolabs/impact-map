@@ -21,17 +21,28 @@ Everything runs on your computer. It does not connect to the internet and upload
 
 ## Quick start: make Claude use the map on every change
 
-**1. Install** (once). In Claude Code:
+**1. Install** (once). Pick the easiest for you:
+
+- **One line in a terminal** (PowerShell, macOS or Linux; the `;` works in all of them):
+
+  ```
+  claude plugin marketplace add waleedolabs/impact-map; claude plugin install impact-map@impact-map
+  ```
+
+- **Or ask Claude to do it.** In a Claude Code session, send this single message:
+
+  > Install the Claude Code plugin impact-map for me: run `claude plugin marketplace add waleedolabs/impact-map` and then `claude plugin install impact-map@impact-map`, and tell me when to open a new session.
+
+- **Or, inside Claude Code, one command per message:**
 
 ```
 /plugin marketplace add waleedolabs/impact-map
 ```
-
-Send them **one at a time**: `/plugin` accepts a single line per message, so pasting both lines together fails with "/plugin only works on a single line". Wait for the first to finish, then send the second. (Or run them in a terminal as `claude plugin marketplace add waleedolabs/impact-map` and `claude plugin install impact-map@impact-map`.)
-
 ```
 /plugin install impact-map@impact-map
 ```
+
+Send them **one at a time**: `/plugin` accepts a single line per message, so pasting both lines together fails with "/plugin only works on a single line". Wait for the first to finish, then send the second. (Or run them in a terminal as `claude plugin marketplace add waleedolabs/impact-map` and `claude plugin install impact-map@impact-map`.)
 
 Then open a **new session** (plugins are read when a session starts).
 

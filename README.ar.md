@@ -21,17 +21,28 @@
 
 ## البداية السريعة: خلّي Claude يستعين بالخريطة كل مرة
 
-**1. التثبيت** (مرة وحدة). داخل Claude Code:
+**1. التثبيت** (مرة وحدة). اختر الأسهل لك:
+
+- **سطر واحد بالطرفية** (PowerShell أو macOS أو Linux؛ الفاصلة المنقوطة `;` بتشتغل بالكل):
+
+  ```
+  claude plugin marketplace add waleedolabs/impact-map; claude plugin install impact-map@impact-map
+  ```
+
+- **أو خلّي Claude يركّبها.** داخل جلسة Claude Code ابعت رسالة وحدة:
+
+  > ركّب لي إضافة Claude Code اسمها impact-map: شغّل `claude plugin marketplace add waleedolabs/impact-map` وبعدها `claude plugin install impact-map@impact-map`، وقلي إيمتى أفتح جلسة جديدة.
+
+- **أو داخل Claude Code، أمر بكل رسالة:**
 
 ```
 /plugin marketplace add waleedolabs/impact-map
 ```
-
-ابعتهم **واحد واحد**: `/plugin` بيقبل سطراً واحداً بكل رسالة، فلو لصقت الأمرين مع بعض بيطلع خطأ «/plugin only works on a single line». استنّى الأول يخلص وبعدين ابعت التاني. (أو شغّلهم بالطرفية: `claude plugin marketplace add waleedolabs/impact-map` و`claude plugin install impact-map@impact-map`.)
-
 ```
 /plugin install impact-map@impact-map
 ```
+
+ابعتهم **واحد واحد**: `/plugin` بيقبل سطراً واحداً بكل رسالة، فلو لصقت الأمرين مع بعض بيطلع خطأ «/plugin only works on a single line». استنّى الأول يخلص وبعدين ابعت التاني. (أو شغّلهم بالطرفية: `claude plugin marketplace add waleedolabs/impact-map` و`claude plugin install impact-map@impact-map`.)
 
 وبعدها افتح **جلسة جديدة** (الإضافة بتنقرا لما تبلّش الجلسة).
 
