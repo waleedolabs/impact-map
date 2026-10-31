@@ -3,3 +3,4 @@ node_modules/
 variants/
 *.png
 !docs/*.png
+!docs/*.mp4
