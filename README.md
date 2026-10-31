@@ -7,7 +7,27 @@
 
 كل شي بيشتغل على جهازك. ما بيتصل بالإنترنت وما بيرفع شي لأي مكان.
 
-## التشغيل
+## الاستخدام داخل Claude Code (الأسهل)
+
+ركّبها كإضافة مرة وحدة، وبعدها احكي مع Claude بشكل عادي:
+
+```
+/plugin marketplace add waleedolabs/impact-map
+/plugin install impact-map@impact-map
+```
+
+(إذا المستودع خاص، لازم يكون حسابك على GitHub مسجّل دخول بجهازك. أو نزّله وضيفه من مجلد محلي:
+`/plugin marketplace add المسار-المحلي`.)
+
+بعدها:
+
+- اكتب **`/impact-map`** ← بيبني الصفحة ويقلك وين الملف وكيف تفتحه.
+- أو احكي: **«شو بيتأثر لو حذفت ملف accounts.js؟»** ← Claude بيقرأ الخريطة ويجاوبك بكلام بسيط.
+- أو: **«شو الصلاحيات اللي سمحتلك فيها بهالمشروع؟»**
+
+الصفحة بتنحفظ بـ`.impact/` جوا مشروعك (أضفه لـ`.gitignore`). Claude بيقرأ بس، وما بيعدّل كودك.
+
+## التشغيل بدون Claude (سطر أوامر)
 
 بدك Node.js 18 أو أحدث. ما في شي تنزّله.
 
@@ -63,6 +83,11 @@ Impact Map reads a JavaScript / TypeScript / React / HTML project and builds one
 (1) a map of the project's parts and what depends on what, with an edit / delete preview before you touch anything;
 (2) a map of the standing permissions you gave Claude Code, what branches from each, and which parts of your project they reach.
 Everything runs locally. No network, nothing uploaded.
+
+Inside Claude Code (as a plugin): `/plugin marketplace add waleedolabs/impact-map`, then `/plugin install impact-map@impact-map`.
+Then run `/impact-map`, or just ask "what breaks if I delete accounts.js?" and Claude answers from the map.
+
+Without Claude:
 
 ```
 node impact.js path/to/your/project      # writes impact-map.html

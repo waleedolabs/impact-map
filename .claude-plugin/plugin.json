@@ -1,0 +1,7 @@
+{
+  "name": "impact-map",
+  "description": "A map of what depends on what in your project, and of the permissions you gave Claude Code. Ask \"what breaks if I delete X?\" or run /impact-map. Local only, nothing uploaded.",
+  "version": "0.2.0",
+  "author": { "name": "waleedolabs" },
+  "license": "MIT"
+}

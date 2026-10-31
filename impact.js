@@ -70,8 +70,9 @@ if (require.main === module) {
   if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) { console.error('المجلد غير موجود: ' + root); process.exit(2); }
   try {
     const r = build(root, opt), out = path.resolve(opt.out || 'impact-map.html');
+    fs.mkdirSync(path.dirname(out), { recursive: true });
     fs.writeFileSync(out, r.html);
-    if (opt.json) fs.writeFileSync(opt.json, JSON.stringify(r.graph, null, 1));
+    if (opt.json) { fs.mkdirSync(path.dirname(path.resolve(opt.json)), { recursive: true }); fs.writeFileSync(opt.json, JSON.stringify(r.graph, null, 1)); }
     console.log('تم. الصفحة: ' + out);
     console.log('  ' + r.project.stats.files + ' ملف، ' + r.project.stats.functions + ' دالة، ' + r.project.stats.edges + ' رابط، ' + r.project.stats.areas + ' مناطق.');
     r.project.warnings.forEach((w) => console.log('  ملاحظة: ' + w));

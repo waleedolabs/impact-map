@@ -1,0 +1,12 @@
+{
+  "name": "impact-map",
+  "owner": { "name": "waleedolabs" },
+  "description": "Impact Map: see what depends on what in your project, and what permissions you gave Claude Code.",
+  "plugins": [
+    {
+      "name": "impact-map",
+      "source": "./",
+      "description": "A map of what depends on what in your project, and of the permissions you gave Claude Code. Local only, nothing uploaded."
+    }
+  ]
+}

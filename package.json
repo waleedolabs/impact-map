@@ -6,5 +6,5 @@
   "scripts": { "test": "node tests/selftest.js" },
   "engines": { "node": ">=18" },
   "license": "MIT",
-  "files": ["impact.js", "analyzer", "approvals", "hook", "map", "vendor", "README.md", "LICENSE"]
+  "files": ["impact.js", "analyzer", "approvals", "hook", "map", "vendor", "skills", ".claude-plugin", "commands", "README.md", "LICENSE"]
 }
