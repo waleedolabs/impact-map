@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>خريطة جلتش ران</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: the real map of the game first, controls and the ready-made message under it, proof of accuracy last. */
+:root {
+  --bg: #eef1f4; --surface: #ffffff; --ink: #17212b; --muted: #5a6876; --line: #c9d2db;
+  --target: #1f5fbf;   --target-bg: #dce8fa;
+  --removed: #c62828;  --removed-bg: #fbe1e1;
+  --direct: #c2620a;   --direct-bg: #fde8cf;
+  --indirect: #9a7b00; --indirect-bg: #fbf3cc;
+  --safe: #2e7d4f;     --safe-bg: #e2f2e8;
+  --font: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f151b; --surface: #17202a; --ink: #e8edf2; --muted: #93a1af; --line: #31404f;
+    --target: #6ea3f2; --target-bg: #1b2f4d; --removed: #ff7b7b; --removed-bg: #4a2023;
+    --direct: #f0a04b; --direct-bg: #45300f; --indirect: #e3c84f; --indirect-bg: #3b3510;
+    --safe: #62c28a; --safe-bg: #17352a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f151b; --surface: #17202a; --ink: #e8edf2; --muted: #93a1af; --line: #31404f;
+  --target: #6ea3f2; --target-bg: #1b2f4d; --removed: #ff7b7b; --removed-bg: #4a2023;
+  --direct: #f0a04b; --direct-bg: #45300f; --indirect: #e3c84f; --indirect-bg: #3b3510;
+  --safe: #62c28a; --safe-bg: #17352a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); line-height: 1.6; }
+.app { max-width: 1040px; margin: 0 auto; padding: 20px 16px 40px; display: grid; gap: 16px; }
+header h1 { margin: 0 0 4px; font-size: 1.5rem; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); max-width: 62ch; }
+.cols { display: grid; gap: 16px; align-items: start; }
+@media (min-width: 900px) { .cols { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+#map { display: block; width: 100%; height: auto; max-width: 600px; margin: 0 auto; }
+.legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 4px 2px; padding: 0; font-size: .8125rem; color: var(--muted); }
+.legend li { display: flex; align-items: center; gap: 6px; }
+.dot { width: 14px; height: 14px; border-radius: 4px; border: 2px solid; display: inline-block; }
+.dot.target { background: var(--target-bg); border-color: var(--target); }
+.dot.removed { background: var(--removed-bg); border-color: var(--removed); }
+.dot.direct { background: var(--direct-bg); border-color: var(--direct); }
+.dot.indirect { background: var(--indirect-bg); border-color: var(--indirect); border-style: dashed; }
+.dot.safe { background: var(--safe-bg); border-color: var(--safe); }
+
+.node { cursor: pointer; outline: none; }
+.node rect.box { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.node text { fill: var(--ink); font-family: var(--font); font-weight: 500; pointer-events: none; }
+.node text.sub { font-size: 9.5px; font-weight: 600; opacity: .85; }
+.node.area rect.box { stroke-width: 2; }
+.node.area text.t { font-weight: 700; }
+.node.core rect.box { fill: var(--ink); stroke: var(--ink); }
+.node.core text { fill: var(--bg); font-weight: 700; }
+.node.st-safe rect.box { fill: var(--safe-bg); stroke: var(--safe); }
+.node.st-target rect.box { fill: var(--target-bg); stroke: var(--target); stroke-width: 2.5; }
+.node.st-removed rect.box { fill: var(--removed-bg); stroke: var(--removed); stroke-width: 2.5; }
+.node.st-direct rect.box { fill: var(--direct-bg); stroke: var(--direct); stroke-width: 2; }
+.node.st-indirect rect.box { fill: var(--indirect-bg); stroke: var(--indirect); stroke-width: 2; stroke-dasharray: 4 3; }
+.node rect.ring { fill: none; stroke: var(--ink); stroke-width: 1.5; opacity: 0; }
+.node.sel rect.ring { opacity: 1; }
+.node:focus-visible rect.ring { opacity: 1; stroke: var(--target); stroke-width: 3; }
+.badge circle { stroke: var(--surface); stroke-width: 1.5; }
+.badge text { fill: #fff; font-size: 10px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.b-removed circle { fill: var(--removed); } .b-direct circle { fill: var(--direct); }
+.b-indirect circle { fill: var(--indirect); } .b-target circle { fill: var(--target); } .b-safe circle { fill: var(--safe); }
+.tree-edge { fill: none; stroke: var(--line); stroke-width: 1.8; stroke-linecap: round; }
+.flow-edge { fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-dasharray: 5 4; }
+#arrowhead path { fill: var(--muted); }
+@media (prefers-reduced-motion: no-preference) { .node rect.box { transition: fill .15s, stroke .15s; } }
+
+.panel { display: grid; gap: 14px; }
+.panel h2 { margin: 0; font-size: 1.25rem; }
+.sel-desc { margin: 2px 0 0; color: var(--muted); }
+.summary { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--bg); font-weight: 600; line-height: 1.7; }
+.unit span { display: block; }
+details { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+details summary { cursor: pointer; font-weight: 600; }
+details[open] summary { margin-bottom: 10px; }
+.where { margin: 4px 0 0; font-size: .8125rem; color: var(--muted); direction: ltr; text-align: right; unicode-bidi: plaintext; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button { font: inherit; font-weight: 600; padding: 9px 12px; background: transparent; color: var(--ink); border: 0; cursor: pointer; }
+.seg button + button { border-inline-start: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.seg button:focus-visible, .copy:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid var(--target); outline-offset: 2px; }
+label { font-weight: 600; display: block; margin-bottom: 4px; }
+textarea { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; resize: vertical; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { padding: 3px 10px; border-radius: 999px; font-size: .8125rem; font-weight: 600; border: 1.5px solid; }
+.chip.removed { background: var(--removed-bg); border-color: var(--removed); color: var(--removed); }
+.chip.target { background: var(--target-bg); border-color: var(--target); color: var(--target); }
+.chip.direct { background: var(--direct-bg); border-color: var(--direct); color: var(--direct); }
+.chip.indirect { background: var(--indirect-bg); border-color: var(--indirect); color: var(--indirect); border-style: dashed; }
+.chip.safe { background: var(--safe-bg); border-color: var(--safe); color: var(--safe); }
+.group h3 { margin: 0 0 4px; font-size: .9375rem; }
+.group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.group li { padding: 8px 10px; border-radius: 10px; border-inline-start: 4px solid; background: var(--bg); }
+.group li b { display: block; }
+.group li .fn { font-weight: 500; }
+.group li span { color: var(--muted); font-size: .875rem; }
+.ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+.g-removed li { border-color: var(--removed); } .g-direct li { border-color: var(--direct); } .g-indirect li { border-color: var(--indirect); }
+.safe-line { margin: 0; color: var(--muted); font-size: .9375rem; }
+.msg-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.msg-head h3 { margin: 0; font-size: 1rem; }
+.copy { font: inherit; font-weight: 600; padding: 7px 14px; border-radius: 10px; border: 0; background: var(--target); color: #fff; cursor: pointer; }
+:root[data-theme="dark"] .copy { color: #0b1420; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .copy { color: #0b1420; } }
+#msg { line-height: 1.75; min-height: 11rem; }
+.note { margin: 0; color: var(--muted); font-size: .8125rem; }
+
+.proof h2 { margin: 0 0 6px; font-size: 1.125rem; }
+.proof p { margin: 0 0 8px; }
+.proof ul { margin: 0 0 8px; padding-inline-start: 1.2rem; display: grid; gap: 4px; }
+.big { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 12px; }
+.big div { flex: 1 1 130px; border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; background: var(--bg); }
+.big strong { display: block; font-size: 1.5rem; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.big span { color: var(--muted); font-size: .8125rem; }
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <h1>خريطة جلتش ران</h1>
+    <p>هاي خريطة لعبتك الحقيقية، طالعة من الكود نفسه (112 دالة بملفين). اضغط على أي جزء، واختر «تعديل» أو «حذف»، وشوف شو رح يتأثر قبل ما تلمس شي. الأسماء التقنية مخبّأة تحت زر «التفاصيل التقنية».</p>
+  </header>
+
+  <div class="cols">
+    <section class="card" aria-label="خريطة اللعبة">
+      <svg id="map" role="group" aria-label="خريطة أجزاء اللعبة">
+        <defs>
+          <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z"></path></marker>
+        </defs>
+        <g id="treeLayer"></g><g id="flowLayer"></g><g id="nodeLayer"></g>
+      </svg>
+      <ul class="legend" aria-label="دليل الألوان">
+        <li><span class="dot target"></span>ما ستعدّله</li>
+        <li><span class="dot removed"></span>ما سيُحذف</li>
+        <li><span class="dot direct"></span>يتأثر مباشرة</li>
+        <li><span class="dot indirect"></span>قد يتأثر</li>
+        <li><span class="dot safe"></span>سليم</li>
+      </ul>
+    </section>
+
+    <section class="card panel" id="panel" aria-live="polite">
+      <div>
+        <h2 id="selName"></h2>
+        <p class="sel-desc" id="selDesc"></p>
+        <p class="where" id="selWhere"></p>
+      </div>
+      <div class="seg" role="group" aria-label="نوع التغيير">
+        <button type="button" id="mModify" aria-pressed="true">تعديل</button>
+        <button type="button" id="mDelete" aria-pressed="false">حذف</button>
+      </div>
+      <p class="summary" id="summary"></p>
+      <div class="chips" id="chips"></div>
+      <div id="groups" style="display:grid;gap:12px"></div>
+    </section>
+  </div>
+
+  <section class="card proof" id="proof" aria-label="مدى دقة الخريطة"></section>
+</main>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  var $ = function (id) { return document.getElementById(id); };
+  var G = /*GRAPH*/null;
+  var RES = /*RESULTS*/null;
+  var AREAS = /*AREAS*/null;
+
+  // ---- graph lookups ---------------------------------------------------------------------
+  var NODE = {}, KIDS = {}, DEPS = {};
+  G.nodes.forEach(function (n) { NODE[n.id] = n; if (n.parent) (KIDS[n.parent] = KIDS[n.parent] || []).push(n.id); });
+  G.edges.forEach(function (e) { (DEPS[e.to] = DEPS[e.to] || []).push(e); });
+  function descendants(id) { var out = []; (KIDS[id] || []).forEach(function (c) { out.push(c); out = out.concat(descendants(c)); }); return out; }
+  function label(id) {
+    var n = NODE[id];
+    if (n.kind === "route") return "طلب " + n.name;
+    if (n.kind === "top") return n.file === "worker.js" ? "كود الخادم الرئيسي" : "كود الصفحة الرئيسي";
+    if (n.kind === "data") return "بيانات المراحل";
+    return n.name;
+  }
+  function where(id) { var n = NODE[id]; return n.kind === "route" || n.kind === "top" ? n.file : n.file + ":" + n.start; }
+  var HOW = { calls: "يستدعي", passes: "يمرّر", uses: "يقرأ", network: "يرسل طلباً إلى" };
+
+  // ---- display nodes (areas and leaves) -------------------------------------------------------
+  var DISP = {}, order = [];
+  AREAS.forEach(function (a) {
+    var an = { id: a.id, name: a.name, desc: a.desc, kind: "area", members: [], leaves: [] };
+    DISP[a.id] = an; order.push(an);
+    a.leaves.forEach(function (l) {
+      var ln = { id: l.id, name: l.name, desc: l.desc || a.desc, kind: "leaf", members: l.members, area: a.id };
+      DISP[l.id] = ln; an.leaves.push(ln); order.push(ln);
+    });
+    if (!a.leaves.length) an.members = a.members; else an.members = [].concat.apply([], a.leaves.map(function (l) { return l.members; }));
+  });
+  var HOME = {};   // node id -> the display node that shows it
+  order.forEach(function (d) { if (d.kind === "leaf" || (d.kind === "area" && !d.leaves.length)) d.members.forEach(function (m) { HOME[m] = d.id; }); });
+
+  // ---- layout -----------------------------------------------------------------------------------
+  var CX = 250, CY = 360, pos = {};
+  pos.core = { x: CX, y: CY, w: 92, h: 46 };
+  AREAS.forEach(function (a) {
+    var th = a.angle * Math.PI / 180;
+    pos[a.id] = { x: CX + 104 * Math.cos(th), y: CY + 165 * Math.sin(th), w: 96, h: 42 };
+    var n = a.leaves.length, offs = n === 0 ? [] : n === 1 ? [0] : n === 2 ? [-10, 10] : [-18, 0, 18];
+    a.leaves.forEach(function (l, i) {
+      var t2 = (a.angle + offs[i]) * Math.PI / 180;
+      pos[l.id] = { x: CX + 200 * Math.cos(t2), y: CY + 295 * Math.sin(t2), w: 92, h: 40 };
+    });
+  });
+  var minY = 1e9, maxY = -1e9;
+  Object.keys(pos).forEach(function (k) { minY = Math.min(minY, pos[k].y - pos[k].h / 2); maxY = Math.max(maxY, pos[k].y + pos[k].h / 2); });
+  $("map").setAttribute("viewBox", "0 " + (minY - 12) + " 500 " + (maxY - minY + 24));
+
+  function el(tag, attrs, parent) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+  function edgePt(p, tx, ty) {
+    var dx = tx - p.x, dy = ty - p.y, t = Math.min((p.w / 2) / Math.max(Math.abs(dx), 1e-6), (p.h / 2) / Math.max(Math.abs(dy), 1e-6));
+    return [p.x + dx * t, p.y + dy * t];
+  }
+  function curve(a, b, bend) {
+    var p1 = edgePt(pos[a], pos[b].x, pos[b].y), p2 = edgePt(pos[b], pos[a].x, pos[a].y);
+    var mx = (p1[0] + p2[0]) / 2, my = (p1[1] + p2[1]) / 2, dx = p2[0] - p1[0], dy = p2[1] - p1[1], len = Math.sqrt(dx * dx + dy * dy) || 1;
+    return "M" + p1[0].toFixed(1) + "," + p1[1].toFixed(1) + " Q" + (mx - dy / len * bend).toFixed(1) + "," + (my + dx / len * bend).toFixed(1) + " " + p2[0].toFixed(1) + "," + p2[1].toFixed(1);
+  }
+
+  var state = { sel: "ui_fx", mode: "delete" };
+
+  var nodeEls = {};
+  (function build() {
+    var tl = $("treeLayer"), nl = $("nodeLayer");
+    AREAS.forEach(function (a, i) {
+      el("path", { "class": "tree-edge", d: curve("core", a.id, i % 2 ? 8 : -8) }, tl);
+      a.leaves.forEach(function (l, j) { el("path", { "class": "tree-edge", d: curve(a.id, l.id, j % 2 ? 6 : -6) }, tl); });
+    });
+    function mk(id, cls, name) {
+      var p = pos[id];
+      var g = el("g", { "class": "node " + cls, tabindex: "0", role: "button", "data-id": id }, nl);
+      el("rect", { "class": "ring", x: p.x - p.w / 2 - 4, y: p.y - p.h / 2 - 4, width: p.w + 8, height: p.h + 8, rx: 13 }, g);
+      el("rect", { "class": "box", x: p.x - p.w / 2, y: p.y - p.h / 2, width: p.w, height: p.h, rx: 10 }, g);
+      var t = el("text", { "class": "t", x: p.x, y: p.y - 4, "text-anchor": "middle", "dominant-baseline": "central" }, g); t.textContent = name;
+      var s = el("text", { "class": "sub", x: p.x, y: p.y + 11, "text-anchor": "middle", "dominant-baseline": "central" }, g);
+      var b = el("g", { "class": "badge", visibility: "hidden" }, g);
+      el("circle", { cx: p.x + p.w / 2 - 3, cy: p.y - p.h / 2 + 3, r: 9 }, b);
+      var bt = el("text", { x: p.x + p.w / 2 - 3, y: p.y - p.h / 2 + 3 }, b);
+      nodeEls[id] = { g: g, t: t, s: s, badge: b, bt: bt };
+      g.addEventListener("click", function () { choose(id, true); });
+      g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(id, true); } });
+    }
+    mk("core", "core", "جلتش ران");
+    order.forEach(function (d) { mk(d.id, d.kind, d.name); });
+    fit();
+  })();
+  function fit() {
+    Object.keys(nodeEls).forEach(function (id) {
+      var t = nodeEls[id].t, base = id === "core" ? 14 : (DISP[id] && DISP[id].kind === "area" ? 12.5 : 11.5), w = 0;
+      t.setAttribute("font-size", base);
+      try { w = t.getComputedTextLength(); } catch (e) {}
+      if (w > pos[id].w - 12) t.setAttribute("font-size", (base * (pos[id].w - 12) / w).toFixed(2));
+    });
+  }
+
+  // ---- impact -----------------------------------------------------------------------------------
+  function targetsOf(id) { return DISP[id].members; }
+  function analyze(targets, mode) {
+    var removed = {}, info = {}, queue = [];
+    targets.forEach(function (t) { removed[t] = true; if (mode === "delete") descendants(t).forEach(function (d) { removed[d] = true; }); });
+    Object.keys(removed).forEach(function (r) { queue.push({ id: r, d: 0 }); });
+    while (queue.length) {
+      var cur = queue.shift();
+      (DEPS[cur.id] || []).forEach(function (e) {
+        if (!removed[e.from] && !info[e.from]) { info[e.from] = { d: cur.d + 1, via: cur.id, how: e.how }; queue.push({ id: e.from, d: cur.d + 1 }); }
+      });
+    }
+    return { removed: removed, info: info };
+  }
+  var RANK = { removed: 5, target: 5, direct: 3, indirect: 2, safe: 1 };
+  function memberState(id, res) {
+    if (res.removed[id]) return state.mode === "delete" ? "removed" : "target";
+    if (res.info[id]) return res.info[id].d === 1 ? "direct" : "indirect";
+    return "safe";
+  }
+  var TARGETSET = {};
+  function isTarget(id) { return !!TARGETSET[id]; }
+  function groupState(d, res) {
+    var worst = "safe", hit = 0;
+    d.members.forEach(function (m) { var s = memberState(m, res); if (s !== "safe") hit++; if (RANK[s] > RANK[worst]) worst = s; });
+    if (d.kind === "area" && d.leaves.length) {
+      worst = "safe"; hit = 0;
+      d.leaves.forEach(function (l) { var r = groupState(l, res); hit += r.hit; if (RANK[r.state] > RANK[worst]) worst = r.state; });
+    }
+    return { state: worst, hit: hit, total: d.members.length };
+  }
+
+  var BADGE = { removed: ["✕", "b-removed"], target: ["✎", "b-target"], direct: ["!", "b-direct"], indirect: ["~", "b-indirect"], safe: ["✓", "b-safe"] };
+  var STATUS = { target: "ستعدّله", removed: "سيُحذف", direct: "يتأثر مباشرة", indirect: "قد يتأثر", safe: "سليم" };
+
+  function paint(res) {
+    var fl = $("flowLayer"); while (fl.firstChild) fl.removeChild(fl.firstChild);
+    order.forEach(function (d) {
+      var gs = groupState(d, res), ne = nodeEls[d.id];
+      ne.g.setAttribute("class", "node " + d.kind + " st-" + gs.state + (d.id === state.sel ? " sel" : ""));
+      ne.g.setAttribute("aria-pressed", d.id === state.sel ? "true" : "false");
+      ne.g.setAttribute("aria-label", d.name + ": " + STATUS[gs.state] + (gs.hit ? " (" + gs.hit + " من " + gs.total + " دالة)" : ""));
+      ne.s.textContent = gs.hit ? gs.hit + " من " + gs.total : gs.total + " دالة";
+      var bd = BADGE[gs.state]; ne.badge.setAttribute("class", "badge " + bd[1]); ne.badge.setAttribute("visibility", "visible"); ne.bt.textContent = bd[0];
+    });
+    nodeEls.core.g.setAttribute("class", "node core");
+    var seen = {}, count = 0;
+    Object.keys(res.info).forEach(function (id) {
+      var inf = res.info[id], a = HOME[inf.via], b = HOME[id];
+      if (!a || !b || a === b || !pos[a] || !pos[b]) return;
+      var k = a + ">" + b; if (seen[k] || count > 14) return; seen[k] = 1; count++;
+      el("path", { "class": "flow-edge", d: curve(a, b, 24 * (count % 2 ? 1 : -1)), "marker-end": "url(#arrowhead)" }, fl);
+    });
+  }
+
+  // ---- panel ----------------------------------------------------------------------------------
+  function chip(cls, text) { var s = document.createElement("span"); s.className = "chip " + cls; s.textContent = text; return s; }
+  var UNITS = order.filter(function (g) { return g.kind === "leaf" || (g.kind === "area" && !g.leaves.length); });
+  function unitName(u) { return u.kind === "leaf" ? u.name + " · " + DISP[u.area].name : u.name; }
+  function names(arr) { return arr.map(function (u) { return "«" + unitName(u) + "»"; }).join("، "); }
+  function fnText(id) { var n = NODE[id]; return n.kind === "function" ? n.name + "()" : label(id); }
+  function because(u, res) {
+    var via = {};
+    u.members.forEach(function (m) { var inf = res.info[m]; if (inf) { var h = HOME[inf.via]; if (h && h !== u.id) via[h] = 1; } });
+    var list = Object.keys(via).map(function (id) { return "«" + unitName(DISP[id]) + "»"; });
+    return list.length ? "لأنه بيعتمد على " + list.slice(0, 2).join(" و") + (list.length > 2 ? " وغيرها" : "") : "";
+  }
+  function unitBlock(cls, title, units, res) {
+    if (!units.length) return null;
+    var d = document.createElement("div"); d.className = "group g-" + cls;
+    var h = document.createElement("h3"); h.textContent = title + " (" + units.length + ")"; d.appendChild(h);
+    var ul = document.createElement("ul");
+    units.forEach(function (u) {
+      var gs = groupState(u, res), li = document.createElement("li"), b = document.createElement("b"), s1 = document.createElement("span"), s2 = document.createElement("span");
+      li.className = "unit"; b.textContent = unitName(u); s1.textContent = u.desc;
+      var why = because(u, res);
+      s2.textContent = gs.hit + " من " + gs.total + " دالة" + (why ? " · " + why : "");
+      li.appendChild(b); li.appendChild(s1); li.appendChild(s2); ul.appendChild(li);
+    });
+    d.appendChild(ul); return d;
+  }
+  function fnBlock(title, ids, res) {
+    if (!ids.length) return null;
+    var d = document.createElement("div"); d.className = "group";
+    var h = document.createElement("h3"); h.textContent = title + " (" + ids.length + ")"; d.appendChild(h);
+    var ul = document.createElement("ul");
+    ids.slice(0, 40).forEach(function (id) {
+      var li = document.createElement("li"), b = document.createElement("b"), w = document.createElement("span");
+      b.className = "fn"; b.textContent = fnText(id) + " "; w.className = "ltr"; w.textContent = where(id); b.appendChild(w); li.appendChild(b);
+      var inf = res.info[id]; if (inf) { var sp = document.createElement("span"); sp.textContent = HOW[inf.how] + " «" + label(inf.via) + "»"; li.appendChild(sp); }
+      ul.appendChild(li);
+    });
+    if (ids.length > 40) { var more = document.createElement("li"), sp2 = document.createElement("span"); sp2.textContent = "و" + (ids.length - 40) + " دالة أخرى."; more.appendChild(sp2); ul.appendChild(more); }
+    d.appendChild(ul); return d;
+  }
+
+  function render() {
+    var d = DISP[state.sel]; TARGETSET = {}; targetsOf(state.sel).forEach(function (t) { TARGETSET[t] = true; });
+    var res = analyze(targetsOf(state.sel), state.mode);
+    paint(res);
+    var files = {}; d.members.forEach(function (m) { files[NODE[m].file] = 1; });
+    $("selName").textContent = d.name + (d.kind === "leaf" ? " · " + DISP[d.area].name : "");
+    $("selDesc").textContent = d.desc;
+    $("selWhere").textContent = d.members.length + " من الدوال والأجزاء، في " + Object.keys(files).join(" و");
+    $("mModify").setAttribute("aria-pressed", state.mode === "modify"); $("mDelete").setAttribute("aria-pressed", state.mode === "delete");
+
+    var U = { removed: [], direct: [], indirect: [], safe: [] };
+    UNITS.forEach(function (u) {
+      var s = groupState(u, res).state;
+      if (s === "removed" || s === "target") U.removed.push(u); else if (s === "direct") U.direct.push(u); else if (s === "indirect") U.indirect.push(u); else U.safe.push(u);
+    });
+    var picked = UNITS.filter(function (u) { return u.members.some(function (m) { return TARGETSET[m]; }); });
+    var alsoGone = U.removed.filter(function (u) { return picked.indexOf(u) < 0; });
+    var nm = "«" + d.name + "»", t;
+    if (state.mode === "delete") {
+      t = "لو حذفت " + nm + ": " + (U.direct.length ? "رح يتعطّل أو يتغيّر شي بـ " + names(U.direct) + "." : "ما رح يتعطّل شي بشكل مباشر.");
+      if (alsoGone.length) t += " ورح ينحذف معه كمان " + names(alsoGone) + ".";
+      if (U.indirect.length) t += " وممكن يتأثر بشكل غير مباشر: " + names(U.indirect) + ".";
+    } else {
+      t = "لو عدّلت " + nm + ": " + (U.direct.length ? "لازم تتأكد بعد التعديل من " + names(U.direct) + "." : "ما في جزء بيعتمد عليه مباشرة.");
+      if (U.indirect.length) t += " وممكن يمتد الأثر لـ " + names(U.indirect) + ".";
+    }
+    if (!U.direct.length && !U.indirect.length && !alsoGone.length) t += " لا شي تاني بيعتمد عليه بحسب الخريطة.";
+    $("summary").textContent = t;
+
+    var chips = $("chips"); chips.textContent = "";
+    chips.appendChild(chip(state.mode === "delete" ? "removed" : "target", (state.mode === "delete" ? "ينحذف " : "تعدّل ") + U.removed.length + " جزء"));
+    chips.appendChild(chip("direct", "يتأثر مباشرة " + U.direct.length));
+    chips.appendChild(chip("indirect", "ممكن يتأثر " + U.indirect.length));
+    chips.appendChild(chip("safe", "سليم " + U.safe.length));
+
+    var gs = $("groups"); gs.textContent = "";
+    [state.mode === "delete" && alsoGone.length ? unitBlock("removed", "ينحذف معه", alsoGone, res) : null,
+     unitBlock("direct", state.mode === "delete" ? "رح يتعطّل أو يتغيّر" : "لازم تتأكد منه", U.direct, res),
+     unitBlock("indirect", "ممكن يتأثر", U.indirect, res)].forEach(function (b) { if (b) gs.appendChild(b); });
+    if (U.safe.length) { var sl = document.createElement("p"); sl.className = "safe-line"; sl.textContent = "أجزاء ما رح تتأثر: " + U.safe.map(unitName).join("، ") + "."; gs.appendChild(sl); }
+
+    var all = Object.keys(NODE), direct = [], indirect = [], gone = [];
+    all.forEach(function (id) {
+      if (res.removed[id]) { if (!TARGETSET[id]) gone.push(id); return; }
+      if (res.info[id]) (res.info[id].d === 1 ? direct : indirect).push(id);
+    });
+    var det = document.createElement("details"), sm = document.createElement("summary");
+    sm.textContent = "التفاصيل التقنية: أسماء الدوال وأرقام السطور"; det.appendChild(sm);
+    [state.mode === "delete" ? fnBlock("دوال تنحذف معه", gone, res) : null, fnBlock("دوال تتأثر مباشرة", direct, res), fnBlock("دوال قد تتأثر", indirect, res)].forEach(function (b) { if (b) { det.appendChild(b); det.appendChild(document.createElement("br")); } });
+    gs.appendChild(det);
+  }
+
+  function choose(id, scroll) {
+    if (id === "core") return;
+    if (id !== state.sel) state.sel = id;
+    render();
+    if (scroll) { var r = $("panel").getBoundingClientRect(); if (r.top > window.innerHeight * 0.75 || r.bottom < 0) { try { $("panel").scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} } }
+  }
+  $("mModify").addEventListener("click", function () { state.mode = "modify"; render(); });
+  $("mDelete").addEventListener("click", function () { state.mode = "delete"; render(); });
+
+  // ---- proof section ---------------------------------------------------------------------------------
+  (function proof() {
+    var s = $("proof"); if (!RES) { s.hidden = true; return; }
+    var h = '<h2>كم هالخريطة دقيقة؟</h2>' + RES.html;
+    s.innerHTML = h;
+  })();
+
+  render();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+})();
+</script>
+</body>
+</html>
