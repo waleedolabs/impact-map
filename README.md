@@ -19,21 +19,42 @@
 
 Everything runs on your computer. It does not connect to the internet and uploads nothing.
 
-## Make Claude use the map on every change
+## Quick start: make Claude use the map on every change
 
-Instead of reminding it at every step, say this once in any project:
+**1. Install** (once). In Claude Code:
 
-> **"Use the impact map at every step: before you edit or delete anything, check who depends on it and tell me the confidence level, and refresh the map when you finish."**
+```
+/plugin marketplace add waleedolabs/impact-map
+/plugin install impact-map@impact-map
+```
 
-Or run **`/impact-map-keep`**: it adds a standing rule to your project's `CLAUDE.md` (you can see it, and remove it with `/impact-map-keep off`), so it applies to every future session without you repeating it.
+Then open a **new session** (plugins are read when a session starts).
 
-What happens then:
+**2. Turn it on in your project.** Inside your project, run:
 
-- **Before any edit or delete** it asks the map and tells you in two sentences who depends on what it is about to touch, and the confidence level.
-- **If something depends on it** it updates that in the same change or warns you, and it will not delete anything that others depend on (or with medium/low confidence) before you agree.
-- **When it finishes** it rebuilds the map so it matches the code, and runs the tests.
+```
+/impact-map-keep
+```
 
-The map helps it decide; it does not replace running the code. This mode is instructions that Claude follows from the plugin; it has not been tested in a live Claude Code session yet.
+It adds a standing rule to your project's `CLAUDE.md` (you can read it, and remove it with `/impact-map-keep off`), so it applies to every future session without you repeating anything.
+
+Prefer to just say it? Tell Claude once:
+
+> **"Use the impact map at every step: before you edit or delete anything, check who depends on it and tell me the confidence level, don't delete anything others depend on until I agree, and refresh the map when you finish."**
+
+**3. What happens from then on:**
+
+- **Before any edit or delete** Claude asks the map and tells you in a sentence or two who depends on what it is about to touch, and the confidence level.
+- **If something depends on it**, Claude updates that in the same change or warns you. It will not delete anything that others depend on (or with medium/low confidence) before you agree.
+- **When it finishes** a batch of changes, it rebuilds the map so the page matches the code, and runs the tests.
+
+**4. Check that it works.** Open `CLAUDE.md` and look for the block between `<!-- impact-map:start -->` and `<!-- impact-map:end -->`. Then ask Claude to delete a function that other code uses: it should check the map first and mention the confidence level.
+
+**Good to know:**
+
+- This is a standing instruction that Claude follows, not a background program: the map is refreshed when Claude carries out the rule (after each batch of changes), not on every keystroke.
+- The map helps Claude decide; it does not replace running the code. Medium/low confidence means "go and look at the files named in the reason".
+- It has **not been tested in a live Claude Code session yet.** Try it on a small project first, and if Claude ignores the rule, remind it with the sentence above and [tell us](https://github.com/waleedolabs/impact-map/issues).
 
 ## Use it inside Claude Code (easiest)
 
