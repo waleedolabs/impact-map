@@ -122,6 +122,14 @@ In the page itself:
 - A **light / dark** button.
 - **Rename** on any part; the name is saved in your browser.
 
+## What it runs, reads and writes
+
+- **Runs:** plain Node scripts in this plugin (`impact.js`, `analyzer/`, `approvals/`), locally, when you run `/impact-map`, `/impact-map-keep`, or ask Claude about the map. Claude shows you the command before it runs, as it does for any command. The plugin installs **no hooks**; the experimental guard script in `hook/` is not wired to anything.
+- **Reads:** your project's source files (`.js`, `.ts`, `.jsx`, `.tsx`, `.html`; not `node_modules`), `package.json`, and the project's `.claude/settings.json` and `settings.local.json` (to explain permissions). Your personal Claude Code settings are read only if you pass a copy with `--user-settings`.
+- **Writes:** `.impact/impact-map.html` and `.impact/graph.json` inside your project. Only with `/impact-map-keep`, one marked block in your project's `CLAUDE.md` (removed again by `/impact-map-keep off`).
+- **Network:** none. The tool contacts no server and sends no data anywhere. The generated page loads no scripts, fonts or images from the internet. (Installing or updating the plugin downloads it from GitHub, done by Claude Code itself.)
+- **Permissions:** it never edits Claude Code's settings or permission rules; it only reads them to show you.
+
 ## Updating
 
 When a new version is out:
