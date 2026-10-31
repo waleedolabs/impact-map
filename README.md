@@ -36,6 +36,10 @@ Not measured: running inside a real Claude Code session (authentication failed i
 function-impact lookups on real projects, MCP tools beyond 3 cases, anything with real users.
 The reviewers are the same model family as the author of the hook, so shared blind spots are likely.
 
+## Change after the freeze
+
+One change was made after the hook was frozen: secret-path matching now normalises Windows backslashes. Both score runs were repeated and gave identical numbers (92-call set 75/92, hold-out 10/10 and 14/14, 2 unnecessary interrupts). The md5 in tests/hook_frozen.md5 is the pre-change file.
+
 ## Known gaps
 
 - `npx` is always red, even when the tool is already in node_modules/.bin.

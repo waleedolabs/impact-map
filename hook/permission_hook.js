@@ -19,6 +19,8 @@ const verdict = (tier, effect) => ({ tier, effect });
 const HOME = os.homedir();
 const SECRET = /(^|\/)(\.ssh|\.aws|\.gnupg|\.kube|\.docker|\.config\/gcloud|\.netrc|\.npmrc|\.pypirc|\.git-credentials|id_rsa|id_ed25519|\.env(\..*)?|credentials(\.json)?|secrets?(\.\w+)?)$/i;
 
+const isSecret = (p) => SECRET.test(String(p).replace(/\\/g, '/'));
+
 function makePaths(root) {
   const inProject = (p) => p === root || p.startsWith(root + path.sep);
   function resolve(arg, cwd) {
@@ -115,7 +117,7 @@ function outsideWrite(code, ctx) {
   for (const m of code.matchAll(/['"`](\/[^'"`\s]+|~\/[^'"`\s]*)['"`]/g)) {
     const p = ctx.P.resolve(m[1], ctx.cwd);
     if (p && p !== '/dev/null' && !ctx.P.inProject(p) && !/^\/(usr|opt|lib|bin|proc|sys)\b/.test(p) && (p.split('/').length >= 3 || /^\/(tmp|etc|var|root|home)\b/.test(p))) return p;
-    if (p && SECRET.test(p)) return p;
+    if (p && isSecret(p)) return p;
   }
   return null;
 }
@@ -215,7 +217,7 @@ function classifyOne(ws, ctx, body) {
 function readVerdict(args, ctx, label) {
   for (const a of args.filter((x) => !x.startsWith('-'))) {
     const p = ctx.P.resolve(a, ctx.cwd);
-    if (p && SECRET.test(p)) return verdict('red', 'بيقرأ ملفاً ممكن يحتوي أسراراً (' + p + ')');
+    if (p && isSecret(p)) return verdict('red', 'بيقرأ ملفاً ممكن يحتوي أسراراً (' + p + ')');
   }
   return verdict('green', label || 'قراءة ملفات');
 }
@@ -227,7 +229,7 @@ function pathsVerdict(label, files, ctx) {
     const p = ctx.P.resolve(f, ctx.cwd);
     if (p === null) return verdict('red', label + ' بمسار ما بقدر أحدده (' + f + ')');
     if (p === '/dev/null') continue;
-    if (SECRET.test(p)) return verdict('red', label + ': ' + p + ' (ملف حساس)');
+    if (isSecret(p)) return verdict('red', label + ': ' + p + ' (ملف حساس)');
     if (!ctx.P.inProject(p)) v = worst(v, verdict('red', label + ' برا مجلد المشروع: ' + p));
   }
   return v;
@@ -379,7 +381,7 @@ function classifyString(cmd, ctx) {
       const p = ctx.P.resolve(t, ctx.cwd);
       if (p === '/dev/null') continue;
       if (p === null) sv = worst(sv, verdict('red', 'بيكتب على ملف بمسار ما قدرت أحدده (' + t + ')'));
-      else if (SECRET.test(p)) sv = worst(sv, verdict('red', 'بيكتب على ملف حساس (' + p + ')'));
+      else if (isSecret(p)) sv = worst(sv, verdict('red', 'بيكتب على ملف حساس (' + p + ')'));
       else if (!ctx.P.inProject(p)) sv = worst(sv, verdict('red', 'بيكتب ملفاً برا مجلد المشروع: ' + p));
       else sv = worst(sv, verdict('yellow', 'بيكتب ملفاً داخل المشروع: ' + path.relative(ctx.root, p)));
     }
@@ -425,7 +427,7 @@ function decide(input) {
 
   if (['Read', 'Glob', 'Grep', 'LS', 'NotebookRead', 'TaskList', 'TaskGet', 'TaskCreate', 'TaskUpdate', 'TodoWrite', 'AskUserQuestion', 'ToolSearch', 'Skill', 'ExitPlanMode', 'BashOutput', 'ListMcpResourcesTool'].includes(tool)) {
     const f = ti.file_path || ti.path || ti.notebook_path;
-    if (f) { const p = P.resolve(f, root); if (p && SECRET.test(p)) return verdict('red', 'بيقرأ ملفاً ممكن يحتوي أسراراً (' + p + ')'); }
+    if (f) { const p = P.resolve(f, root); if (p && isSecret(p)) return verdict('red', 'بيقرأ ملفاً ممكن يحتوي أسراراً (' + p + ')'); }
     return verdict('green', 'قراءة أو إدارة مهام');
   }
   if (tool === 'Bash') return classifyString(String(ti.command || ''), ctx);
@@ -433,7 +435,7 @@ function decide(input) {
     const f = ti.file_path || ti.notebook_path;
     const p = P.resolve(f, root);
     if (!p) return verdict('red', 'بيكتب بمسار ما قدرت أحدده');
-    if (SECRET.test(p)) return verdict('red', 'بيكتب على ملف حساس: ' + p);
+    if (isSecret(p)) return verdict('red', 'بيكتب على ملف حساس: ' + p);
     if (!P.inProject(p)) return verdict('red', 'بيكتب ملفاً برا مجلد المشروع: ' + p);
     const exists = fs.existsSync(p);
     let v = verdict('yellow', (tool === 'Write' ? (exists ? 'بيستبدل محتوى ملف موجود: ' : 'بيعمل ملفاً جديداً: ') : 'بيعدّل الملف: ') + path.relative(root, p));
