@@ -4,13 +4,13 @@
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue) ![Node 18+](https://img.shields.io/badge/node-18%2B-green) ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-7aa2ff) ![Runs locally](https://img.shields.io/badge/runs-locally%2C%20nothing%20uploaded-lightgrey)
 
-<p align="center"><img src="docs/map.ar.png" alt="خريطة المشروع: اختر جزءاً وشوف شو رح يتأثر لو عدّلته أو حذفته" width="900"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/waleedolabs/impact-map/research/docs/map.ar.png" alt="خريطة المشروع: اختر جزءاً وشوف شو رح يتأثر لو عدّلته أو حذفته" width="900"></p>
 
 *مشروع تجريبي صغير. الأزرق: الجزء المختار. البرتقالي: يتأثر مباشرة. الأصفر المتقطع: قد يتأثر. الأخضر: سليم.*
 
 <p align="center"><a href="https://github.com/waleedolabs/impact-map/blob/research/docs/demo.mp4"><b>▶ شاهد العرض (55 ثانية، بالصوت، بالإنكليزي)</b></a></p>
 
-<p align="center"><img src="docs/demo.gif" alt="عرض سريع: اختيار جزء، لو عدّلته ولو حذفته، كل التفاصيل، ومؤشر الثقة" width="720"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/waleedolabs/impact-map/research/docs/demo.gif" alt="عرض سريع: اختيار جزء، لو عدّلته ولو حذفته، كل التفاصيل، ومؤشر الثقة" width="720"></p>
 
 **شو هي؟** أداة بتقرأ كود مشروعك (JavaScript / TypeScript / React / HTML) وبتطلّعلك صفحة وحدة فيها خريطتين:
 

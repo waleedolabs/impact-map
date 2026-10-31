@@ -4,13 +4,13 @@
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue) ![Node 18+](https://img.shields.io/badge/node-18%2B-green) ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-7aa2ff) ![Runs locally](https://img.shields.io/badge/runs-locally%2C%20nothing%20uploaded-lightgrey)
 
-<p align="center"><img src="docs/map.png" alt="Project map: pick a part and see what is affected if you edit or delete it" width="900"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/waleedolabs/impact-map/research/docs/map.png" alt="Project map: pick a part and see what is affected if you edit or delete it" width="900"></p>
 
 *A small demo project. Blue: the part you picked. Orange: directly affected. Dashed yellow: may be affected. Green: fine. The page also comes in Arabic (`--lang ar`).*
 
 <p align="center"><a href="https://github.com/waleedolabs/impact-map/blob/research/docs/demo.mp4"><b>▶ Watch the 55-second demo with sound</b></a></p>
 
-<p align="center"><img src="docs/demo.gif" alt="Quick demo: pick a part, if you edit it and if you delete it, all details, and the confidence level" width="720"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/waleedolabs/impact-map/research/docs/demo.gif" alt="Quick demo: pick a part, if you edit it and if you delete it, all details, and the confidence level" width="720"></p>
 
 **What is it?** A tool that reads your JavaScript / TypeScript / React / HTML project and builds one page with two maps:
 
