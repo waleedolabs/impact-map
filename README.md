@@ -130,6 +130,10 @@ In the page itself:
 - **Network:** none. The tool contacts no server and sends no data anywhere. The generated page loads no scripts, fonts or images from the internet. (Installing or updating the plugin downloads it from GitHub, done by Claude Code itself.)
 - **Permissions:** it never edits Claude Code's settings or permission rules; it only reads them to show you.
 
+## Privacy
+
+Impact Map collects nothing and sends nothing. It runs on your computer, reads your project's files and Claude Code settings only to build the page, and writes the result into `.impact/` inside your project. There is no server, no account, no analytics and no network access (see "What it runs, reads and writes" above). You can delete `.impact/` (and the marked block in `CLAUDE.md`, if you used `/impact-map-keep`) at any time.
+
 ## Updating
 
 When a new version is out:
