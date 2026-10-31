@@ -146,7 +146,9 @@ function analyze(opts) {
   const capList = Object.keys(CAP).filter((k) => caps.has(k)).map((k) => CAP[k]);
   const reach = capList.length ? 'من هلق وطالع، Claude بيقدر ' + capList.join('، ') + ' بدون ما يسألك.' : 'ما في صلاحيات دائمة بتخلّيه يعمل شي خطر بدون سؤال.';
   const modeLine = out.mode && out.mode.risk !== 'green' ? ' ' + out.mode.text + '.' : '';
-  out.summary = { allowed: allow.length, denied: out.rules.filter((r) => r.kind === 'deny').length, byRisk: counts, capabilities: capList, sentence: 'سمحت بـ ' + allow.length + ' صلاحية دائمة (' + counts.red + ' منها خطر). ' + reach + modeLine };
+  const keys = new Set(); caps.forEach((c) => keys.add(c));
+  if (allow.some((r) => ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'].includes(r.tool || parseRule(r.raw).tool)) || (out.mode && ['acceptEdits', 'bypassPermissions'].includes(out.mode.value))) keys.add('modify');
+  out.summary = { capKeys: [...keys], allowed: allow.length, denied: out.rules.filter((r) => r.kind === 'deny').length, byRisk: counts, capabilities: capList, sentence: 'سمحت بـ ' + allow.length + ' صلاحية دائمة (' + counts.red + ' منها خطر). ' + reach + modeLine };
   out.rules.sort((a, b) => RANK[b.risk] - RANK[a.risk] || (a.kind === 'deny') - (b.kind === 'deny'));
   if (opts.activity && fs.existsSync(opts.activity)) {
     const rows = fs.readFileSync(opts.activity, 'utf8').split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l); } catch (e) { return null; } }).filter(Boolean);

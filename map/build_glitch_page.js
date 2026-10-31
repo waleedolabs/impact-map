@@ -48,8 +48,32 @@ for (const a of AREAS) {
 const unassigned = g.nodes.filter((n) => !used.has(n.id)).map((n) => n.id);
 console.error('nodes', g.nodes.length, 'assigned', used.size, 'unassigned:', unassigned);
 
+// ---- what each part can do, read from its own lines of code (nested named functions are masked out)
+const path = require('path');
+const SRC = process.env.SRC_ROOT || '/home/claude/waleedolabs/glitchrun';
+const CAPS = {
+  NET: /\bfetch\s*\(|XMLHttpRequest|new WebSocket/,
+  STO: /localStorage|sessionStorage|indexedDB|document\.cookie/,
+  KEY: /env\.(OPENAI_API_KEY|TOKEN_SECRET|STATS_KEY)|crypto\.subtle\.(importKey|sign)|\bAuthorization\b|\bBearer\b/,
+  AI: /api\.openai\.com|chat\/completions/,
+  DB: /env\.DB\b|\.prepare\(|\.batch\(/,
+  CLIP: /navigator\.clipboard|navigator\.share|window\.open\(|execCommand\(\s*['"]copy|window\.prompt/,
+  SND: /AudioContext|webkitAudioContext|new Audio\(|navigator\.vibrate/,
+};
+const srcCache = {};
+const lines = (f) => srcCache[f] || (srcCache[f] = fs.existsSync(path.join(SRC, f)) ? fs.readFileSync(path.join(SRC, f), 'utf8').split('\n') : null);
+const capsOf = (n) => {
+  if (n.kind === 'data' || n.kind === 'top') return [];
+  const L = lines(n.file); if (!L || !n.start) return [];
+  const mask = new Set();
+  g.nodes.forEach((c) => { if (c.parent === n.id && c.file === n.file && c.start) for (let i = c.start; i <= (c.end || c.start); i++) mask.add(i); });
+  let txt = ''; for (let i = n.start; i <= (n.end || n.start); i++) if (!mask.has(i)) txt += (L[i - 1] || '') + '\n';
+  const out = []; for (const [k, re] of Object.entries(CAPS)) if (re.test(txt)) out.push(k);
+  if (n.kind === 'route' && n.side === 'server') out.push('SRV');
+  return out;
+};
 const slim = {
-  nodes: g.nodes.map((n) => ({ id: n.id, name: n.name, file: n.file, kind: n.kind, start: n.start, parent: n.parent })),
+  nodes: g.nodes.map((n) => ({ id: n.id, name: n.name, file: n.file, kind: n.kind, start: n.start, parent: n.parent, caps: capsOf(n) })),
   edges: g.edges.map((e) => ({ from: e.from, to: e.to, how: e.how })),
 };
 const res = resFile !== '-' ? JSON.parse(fs.readFileSync(resFile, 'utf8')) : null;
