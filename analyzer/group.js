@@ -99,23 +99,50 @@ function groupProject(graph, root, opts) {
   for (const e of graph.edges) { const a = atomOf.get(e.from), b = atomOf.get(e.to); if (!a || !b || a === b) continue; W.set(wk(a, b), (W.get(wk(a, b)) || 0) + (e.n || 1)); }
   const sizeOf = (c) => c.members.length;
   const dirOf = (f) => path.posix.dirname(f);
-  function score(A, B) {   // how much two groups belong together
-    let w = 0; for (const a of A.atoms) for (const b of B.atoms) w += W.get(wk(a, b)) || 0;
-    let sameFile = 0, sameDir = 0; for (const fa of A.files) for (const fb of B.files) { if (fa === fb) sameFile = 1; if (dirOf(fa) === dirOf(fb)) sameDir = 1; }
-    return w / Math.sqrt(sizeOf(A) * sizeOf(B)) + 0.6 * sameFile + 0.2 * sameDir;
+  // Same scoring as before, computed fast: each group keeps its links to other groups and its folders,
+  // and only pairs that share a link or a folder are compared (every other pair scores 0).
+  let nextCid = 0; const dirIndex = new Map(); const byCid = new Map();
+  function initClusters(list) {
+    dirIndex.clear(); byCid.clear(); const atomC = new Map();
+    for (const c of list) { c.cid = ++nextCid; byCid.set(c.cid, c); c.dirs = new Set([...c.files].map(dirOf)); c.nb = new Map(); for (const a of c.atoms) atomC.set(a, c);
+      for (const d of c.dirs) { if (!dirIndex.has(d)) dirIndex.set(d, new Set()); dirIndex.get(d).add(c); } }
+    for (const [k, w] of W) { const [a, b] = k.split('\u0000'), A = atomC.get(a), B = atomC.get(b); if (!A || !B || A === B) continue; A.nb.set(B.cid, (A.nb.get(B.cid) || 0) + w); B.nb.set(A.cid, (B.nb.get(A.cid) || 0) + w); }
+    return list;
   }
-  let clusters = [...atoms.values()].map((a) => ({ atoms: [a.id], files: new Set([a.file]), members: a.members.slice(), leaves: [a] }));
+  const shares = (x, y) => { const [s, l] = x.size <= y.size ? [x, y] : [y, x]; for (const v of s) if (l.has(v)) return 1; return 0; };
+  function score(A, B) {   // how much two groups belong together
+    const w = A.nb.get(B.cid) || 0;
+    return w / Math.sqrt(sizeOf(A) * sizeOf(B)) + 0.6 * shares(A.files, B.files) + 0.2 * shares(A.dirs, B.dirs);
+  }
+  let clusters = initClusters([...atoms.values()].map((a) => ({ atoms: [a.id], files: new Set([a.file]), members: a.members.slice(), leaves: [a] })));
 
   // fold tiny groups into their closest neighbour, then cap the number of parts
-  const merge = (i, j) => { const A = clusters[i], B = clusters[j]; A.atoms.push(...B.atoms); B.files.forEach((f) => A.files.add(f)); A.members.push(...B.members); A.leaves.push(...B.leaves); clusters.splice(j, 1); };
+  const merge = (i, j) => {
+    const A = clusters[i], B = clusters[j];
+    A.atoms.push(...B.atoms); B.files.forEach((f) => A.files.add(f)); A.members.push(...B.members); A.leaves.push(...B.leaves);
+    for (const d of B.dirs) { A.dirs.add(d); const set = dirIndex.get(d); set.delete(B); set.add(A); }
+    for (const [cid, w] of B.nb) { if (cid === A.cid) continue; A.nb.set(cid, (A.nb.get(cid) || 0) + w); const C = byCid.get(cid); C.nb.set(A.cid, (C.nb.get(A.cid) || 0) + w); C.nb.delete(B.cid); }
+    A.nb.delete(B.cid); byCid.delete(B.cid); clusters.splice(j, 1);
+  };
   function mergeBest(filter, limitLeaves) {
-    let best = null, bs = -1;
-    for (let i = 0; i < clusters.length; i++) for (let j = i + 1; j < clusters.length; j++) {
-      if (!filter(clusters[i], clusters[j])) continue;
-      if (limitLeaves && clusters[i].leaves.length + clusters[j].leaves.length > limitLeaves) continue;
-      const s = score(clusters[i], clusters[j]); if (s > bs) { bs = s; best = [i, j]; }
+    const idx = new Map(clusters.map((c, i) => [c, i]));
+    let bs = -1, bi = -1, bj = -1;
+    const ok = (A, B) => filter(A, B) && !(limitLeaves && A.leaves.length + B.leaves.length > limitLeaves);
+    for (let i = 0; i < clusters.length; i++) {
+      const A = clusters[i], seen = new Set();
+      const look = (B) => {
+        const j = idx.get(B); if (j === undefined || j <= i || seen.has(j)) return; seen.add(j);
+        if (!ok(A, B)) return;
+        const s = score(A, B);   // same tie rule as a full scan: the first pair (smallest i, then j) with the top score
+        if (s > bs || (s === bs && (i < bi || (i === bi && j < bj)))) { bs = s; bi = i; bj = j; }
+      };
+      for (const cid of A.nb.keys()) look(byCid.get(cid));
+      for (const d of A.dirs) for (const B of dirIndex.get(d)) look(B);
     }
-    if (!best) return false; merge(best[0], best[1]); return true;
+    if (bi < 0) {   // nothing related: like before, take the first allowed pair
+      outer: for (let i = 0; i < clusters.length; i++) for (let j = i + 1; j < clusters.length; j++) if (ok(clusters[i], clusters[j])) { bi = i; bj = j; break outer; }
+    }
+    if (bi < 0) return false; merge(bi, bj); return true;
   }
   // 1) atoms with a single function join a neighbour (they are not worth a box of their own)
   while (clusters.filter((c) => c.members.length < 2).length && clusters.length > 1) { const tiny = (a, b) => a.members.length < 2 || b.members.length < 2; if (!mergeBest(tiny, 0)) break; }
@@ -124,7 +151,7 @@ function groupProject(graph, root, opts) {
   // the parts (leaves) are the clusters we have now; areas are formed by grouping them further
   const leaves = clusters.map((c, i) => ({ id: 'l' + (i + 1), cluster: c, members: c.members, files: c.files, atoms: c.atoms, name: c.leaves.slice().sort((x, y) => y.members.length - x.members.length)[0].name }));
   let areaC = clusters.map((c, i) => ({ atoms: c.atoms.slice(), files: new Set(c.files), members: c.members.slice(), leaves: [leaves[i]] }));
-  clusters = areaC;
+  clusters = initClusters(areaC);
   while (clusters.length > MAX_AREAS) { if (!mergeBest(() => true, MAX_LEAVES_PER_AREA) && !mergeBest(() => true, MAX_LEAVES_PER_AREA + 3)) { mergeBest(() => true, 0); } }
 
   // ---- naming and describing

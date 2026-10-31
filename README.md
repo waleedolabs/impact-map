@@ -2,7 +2,7 @@
 
 **شو هي؟** أداة بتقرأ كود مشروعك (JavaScript / TypeScript / React / HTML) وبتطلّعلك صفحة وحدة فيها خريطتين:
 
-1. **خريطة المشروع:** أجزاء مشروعك وكيف مرتبطة ببعض. اضغط على أي جزء، واختر «تعديل» أو «حذف»، وشوف شو رح يتأثر **قبل** ما تلمس شي.
+1. **خريطة المشروع:** أجزاء مشروعك وكيف مرتبطة ببعض. اضغط على أي جزء، وتحت الخريطة بتشوف جنب بعض **«لو عدّلته»** و**«لو حذفته»**: شو رح يتأثر **قبل** ما تلمس شي. زر **«كل التفاصيل»** بيعرض كل دالة بالمشروع كمربع لحالها.
 2. **خريطة الصلاحيات:** (بستايل الهاكر) الصلاحيات الدائمة اللي سمحت فيها لـ Claude Code، وشو تفرّع عن كل وحدة، وأي أجزاء من مشروعك بتتأثر.
 
 كل شي بيشتغل على جهازك. ما بيتصل بالإنترنت وما بيرفع شي لأي مكان.
@@ -45,11 +45,27 @@ node impact.js مسار-مجلد-مشروعك
 | `--user-settings ملف.json` | نسخة من إعدادات Claude Code الشخصية (لازم تعطيني نسخة بنفسك) |
 | `--json graph.json` | حفظ الخريطة الخام |
 
-بالصفحة نفسها بتقدر تضغط «غيّر الاسم» لأي جزء، والاسم بينحفظ بمتصفحك.
+بالصفحة نفسها:
+
+- **«كل التفاصيل» / «ملخّص»**: كل دالة كمربع، أو الأجزاء بس.
+- **عجلة الماوس** للتقريب، و**السحب** لتحريك الخريطة، و◎ لترجيعها.
+- زر **الوضع الفاتح / الداكن**.
+- **«غيّر الاسم»** لأي جزء، والاسم بينحفظ بمتصفحك.
+
+## التحديث
+
+لما تنزل نسخة جديدة:
+
+```
+claude plugin marketplace update impact-map
+claude plugin update impact-map@impact-map
+```
+
+وبعدها افتح **جلسة جديدة** بـ Claude Code (الإضافة بتنقرا لما تبلّش الجلسة).
 
 ## قد إيش هي دقيقة؟ (أرقام حقيقية، مع حدودها)
 
-- **الروابط بين الملفات:** على مشروع صغير بـ14 ملف، حذفنا كل ملف فعلياً وشغّلنا الباقي: انكسر 49 ملف، والخريطة ما فاتها ولا واحد. (بيقيس الكسر عند التحميل بس.)
+- **الروابط بين الملفات:** على مشروع صغير بـ14 ملف، حذفنا كل ملف فعلياً وشغّلنا الباقي: انكسر 49 ملف، والخريطة ما فاتها ولا واحد. وعلى كود هالأداة نفسها (36 ملف): انكسر 90 ملف، والخريطة توقّعت 81 (90%). **التسعة اللي فاتتها كلها نفس الحالة:** ملف اختبار بيقرا مشروعاً تانياً **كبيانات** مو ككود، وهالنوع من الاعتماد ما بيبيّن بالخريطة. (بيقيس الكسر عند تحميل الملف بس؛ `tests/file_level_check.js` بيعيد القياس على أي مشروع.)
 - **الروابط بين الدوال:** على لعبة حقيقية (112 دالة)، حذفنا 90 دالة وشغّلنا اللعبة بعد كل حذف. 62 حذف طلّع خطأ واضح، وكل أماكن الخطأ (77) كانت بدوال الخريطة متوقعتها. **28 حذف ما طلّع أي خطأ** (الخطأ بينبلع بصمت)، والخريطة بتبقى بتعرض مين بيعتمد عليها. طريقة العدّ انعدّلت بعد ما شفنا النتائج، فالرقم استرشادي.
 - **TypeScript وReact:** على مشروع React/TypeScript حقيقي (11 دالة، 6 روابط)، الروابط طابقت الاستيراد الفعلي (راجعناها بالقراءة).
 - **التقسيم التلقائي لأجزاء:** بيطابق تقسيماً يدوياً كتبناه للعبة بنسبة 0.63 من 1 (التقسيم حسب الملفات بس بيعطي 0.23). **الأسماء التلقائية بتطلع أحياناً رديئة**، وهاد سبب وجود زر «غيّر الاسم».
@@ -61,7 +77,9 @@ node impact.js مسار-مجلد-مشروعك
 - **الخريطة تقدير مبني على قراءة الكود، مو ضمان.** الكود اللي بيتحمّل بطريقة ديناميكية أو بأسماء متغيرة ممكن تفوتنا روابطه، والصفحة بتنبّه لما بتلاحظ هيك.
 - **الصلاحيات:** الأداة بتشوف **الصلاحيات الدائمة** المحفوظة بملفات إعدادات Claude Code بس (`.claude/settings.json` و`settings.local.json`). الموافقات اللي بتضغط عليها «نعم» مرة وحدة **ما بتنحفظ**، فما بنشوفها. وملف إعداداتك الشخصي العام محمي من Claude نفسه: انسخه بإيدك وأعطيه لـ `--user-settings` إذا بدك.
 - **ما انجرّب مع ناس حقيقيين بعد.** لا نعرف إذا الصفحة بتخلّي الشخص العادي يفهم أكتر.
-- مشاريع كبيرة جداً (أكتر من 1500 ملف) بتنقطع، والصفحة بتبيّن هالشي.
+- **الاعتماد عن طريق البيانات** (ملف بيقرا ملف تاني كنص أو JSON، أو بيشغّله كأمر) ما بيبيّن.
+- **«ما في شي بيعتمد عليه» ما بتعني «آمن تحذفه».** شغّل اختباراتك دايماً.
+- **الحجم:** جرّبناها على مشروع بـ1200 ملف و4800 دالة: الخريطة بتطلع بحوالي 5 ثواني، و«كل التفاصيل» بتفتح بأقل من ثانيتين. أكتر من 1500 ملف بتنقطع، والصفحة بتبيّن هالشي.
 
 ## تجريبي: الحارس
 
@@ -86,6 +104,9 @@ Everything runs locally. No network, nothing uploaded.
 
 Inside Claude Code (as a plugin): `/plugin marketplace add waleedolabs/impact-map`, then `/plugin install impact-map@impact-map`.
 Then run `/impact-map`, or just ask "what breaks if I delete accounts.js?" and Claude answers from the map.
+Update later with `claude plugin marketplace update impact-map` and `claude plugin update impact-map@impact-map`, then start a new session.
+
+In the page: pick any part and see "if you edit it" and "if you delete it" side by side under the map; "all details" shows every function as its own box; zoom with the wheel, drag to move, light/dark toggle.
 
 Without Claude:
 
@@ -94,7 +115,9 @@ node impact.js path/to/your/project      # writes impact-map.html
 ```
 
 Honest limits: JS/TS only; the map is an estimate from reading the code, not a guarantee; only *standing* permissions saved in Claude Code settings files are visible (one-time "Yes" clicks are not stored);
-automatic part names are often rough (rename them in the page); not tested with real users yet. Numbers above are from our own tests and were partly tuned on the same data.
+dependencies through data (a file reading another as text/JSON, or running it as a command) are not seen; "nothing depends on it" does not mean "safe to delete";
+automatic part names are often rough (rename them in the page); not tested with real users yet.
+Measured: deleting each file of this tool's own code for real broke 90 files, the map predicted 81 (all 9 misses were a test reading a sample project as data). Tested up to 1200 files / 4800 functions (about 5 s to build). Numbers above are from our own tests and were partly tuned on the same data.
 
 ## License
 

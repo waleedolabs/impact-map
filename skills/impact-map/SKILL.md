@@ -23,7 +23,7 @@ node "TOOL/impact.js" "PROJECT" --out "PROJECT/.impact/impact-map.html" --json "
 Then tell them, in their language and in plain words:
 - the file path, and how to open it (Windows: `start "" "<path>"`, macOS: `open`, Linux: `xdg-open`). Offer to open it.
 - the counts the tool printed, and EVERY "ملاحظة / note" line it printed (skipped files, dynamic loading, unsupported languages). Do not hide those.
-- two tabs: "خريطة المشروع" (pick a part, choose edit or delete, see what is affected) and "الصلاحيات" (the permissions map).
+- two tabs: "خريطة المشروع" (pick a part on the map; under it "لو عدّلته" and "لو حذفته" sit side by side; the "كل التفاصيل" button shows every function as its own box; wheel to zoom, drag to move) and "الصلاحيات" (the permissions map).
 - suggest adding `.impact/` to `.gitignore`.
 
 ## 2. A specific question: "what breaks if I change / delete X?"
@@ -53,6 +53,6 @@ settings file is not read; if they want it included they must copy it somewhere 
 
 - This is an estimate from reading the code, not a guarantee. Say so when the answer matters (before a deletion).
 - Never claim something is "safe to delete". Say "nothing in the map depends on it", and mention what the map cannot see
-  (dynamic loading, other languages, code outside this folder).
+  (dynamic loading, other languages, code outside this folder, files that read other files as data or run them as commands).
 - Python, Java, Kotlin and other languages are not read. If the tool says it found no JS/TS functions, tell the user that.
 - Do not change the user's code as part of this skill. It only reads.

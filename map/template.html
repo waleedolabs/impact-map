@@ -208,7 +208,7 @@ body.hack .flow-edge { stroke: #39ff14; }
 .hud-tools .theme { font-size: 1rem; }
 .hud-tools button.txt { width: auto; padding: 0 14px; font-size: .85rem; font-weight: 600; white-space: nowrap; }
 .node.fn text { font-weight: 500; }
-.node.fn rect.box { stroke-width: 1.2; filter: none; }
+.node.fn rect.box { stroke-width: 1.2; filter: none; transition: none; }
 .node.fn.st-target rect.box, .node.fn.st-removed rect.box, .node.fn.st-direct rect.box { filter: none; stroke-width: 2.2; }
 .node.fn .badge circle { stroke-width: 1; }
 
@@ -387,11 +387,14 @@ body.hack .hud-sum { display: none; }
       a._secs.forEach(function (q) {
         var parent = o;
         if (q.leaf) { var l = q.leaf.node; l.w = 104; l.h = 40; l.x = R2 * Math.cos(q.mid); l.y = R2 * Math.sin(q.mid); N.push(l); E.push([o, l, 0]); parent = l; }
+        // how far apart boxes must be depends on direction: on the sides of the circle a row is as thick as a box is wide
+        var tstep = 0, rstep = 0;
+        for (var sm = 0; sm <= 4; sm++) { var th = q.a0 + (q.a1 - q.a0) * sm / 4, cs = Math.abs(Math.cos(th)), sn = Math.abs(Math.sin(th)); tstep = Math.max(tstep, sn * FW + cs * FH + GAP); rstep = Math.max(rstep, cs * FW + sn * FH + GAP); }
         var left = q.fns.slice(), row = 0, prev = [];
         while (left.length) {
-          var rad = R3 + row * (FH + GAP), cap = Math.max(1, Math.floor(rad * (q.a1 - q.a0) / (FW + GAP))), k = Math.min(cap, left.length), take = left.splice(0, k), cur = [];
+          var rad = R3 + row * rstep, cap = Math.max(1, Math.floor(rad * (q.a1 - q.a0) / tstep)), k = Math.min(cap, left.length), take = left.splice(0, k), cur = [];
           take.forEach(function (f, j) {
-            var ang = q.mid + (j - (k - 1) / 2) * (FW + GAP) / rad; f.w = FW; f.h = FH; f.x = rad * Math.cos(ang); f.y = rad * Math.sin(ang); N.push(f); cur.push(f);
+            var ang = q.mid + (j - (k - 1) / 2) * tstep / rad; f.w = FW; f.h = FH; f.x = rad * Math.cos(ang); f.y = rad * Math.sin(ang); N.push(f); cur.push(f);
             var par = parent;
             if (prev.length) { var bd = 1e18; prev.forEach(function (g) { var d2 = Math.pow(g.x - f.x, 2) + Math.pow(g.y - f.y, 2); if (d2 < bd) { bd = d2; par = g; } }); }
             E.push([par, f, 0]);
@@ -400,11 +403,25 @@ body.hack .hud-sum { display: none; }
         }
       });
     });
-    for (var it = 0; it < 25; it++) {
+    function push(A, B) {
+      var dx = B.x - A.x, dy = B.y - A.y, ox = (A.w + B.w) / 2 + 4 - Math.abs(dx), oy = (A.h + B.h) / 2 + 4 - Math.abs(dy);
+      if (ox > 0 && oy > 0) { if (ox < oy) { var sx = dx >= 0 ? 1 : -1; A.x -= sx * ox / 2; B.x += sx * ox / 2; } else { var sy = dy >= 0 ? 1 : -1; A.y -= sy * oy / 2; B.y += sy * oy / 2; } return true; }
+      return false;
+    }
+    for (var it = 0; it < 40; it++) {
       var moved = false;
-      for (var i = 1; i < N.length; i++) for (var j = i + 1; j < N.length; j++) {
-        var A = N[i], B = N[j], dx = B.x - A.x, dy = B.y - A.y, ox = (A.w + B.w) / 2 + 4 - Math.abs(dx), oy = (A.h + B.h) / 2 + 4 - Math.abs(dy);
-        if (ox > 0 && oy > 0) { moved = true; if (ox < oy) { var sx = dx >= 0 ? 1 : -1; A.x -= sx * ox / 2; B.x += sx * ox / 2; } else { var sy = dy >= 0 ? 1 : -1; A.y -= sy * oy / 2; B.y += sy * oy / 2; } }
+      if (N.length <= 400) {
+        for (var i = 1; i < N.length; i++) for (var j = i + 1; j < N.length; j++) if (push(N[i], N[j])) moved = true;
+      } else {   // big projects: only compare boxes that sit in neighbouring cells of a grid
+        var CELL = 130, grid = {};
+        for (var q = 1; q < N.length; q++) { var key = Math.floor(N[q].x / CELL) + "," + Math.floor(N[q].y / CELL); (grid[key] = grid[key] || []).push(q); }
+        for (var i2 = 1; i2 < N.length; i2++) {
+          var gx = Math.floor(N[i2].x / CELL), gy = Math.floor(N[i2].y / CELL);
+          for (var ddx = -1; ddx <= 1; ddx++) for (var ddy = -1; ddy <= 1; ddy++) {
+            var cell = grid[(gx + ddx) + "," + (gy + ddy)]; if (!cell) continue;
+            for (var c2 = 0; c2 < cell.length; c2++) if (cell[c2] > i2 && push(N[i2], N[cell[c2]])) moved = true;
+          }
+        }
       }
       if (!moved) break;
     }
@@ -463,13 +480,11 @@ body.hack .hud-sum { display: none; }
     if (FULL) FNALL.forEach(function (d) { mk(d.id, "fn", d.short, d.name + " · " + d.desc); });
     fit();
   }
-  function fit() {
-    Object.keys(nodeEls).forEach(function (id) {
-      var d = DISP[id], t = nodeEls[id].t, base = id === "core" ? 14 : (d && d.kind === "fn" ? 10.5 : (d && d.kind === "area" ? 12.5 : 11.5)), w = 0;
-      t.setAttribute("font-size", base);
-      try { w = t.getComputedTextLength(); } catch (e) {}
-      if (w > pos[id].w - 10) t.setAttribute("font-size", (base * (pos[id].w - 10) / w).toFixed(2));
-    });
+  function fit() {   // set every size first, then measure every label, then shrink: one layout pass instead of one per box
+    var ids = Object.keys(nodeEls), base = {}, w = {};
+    ids.forEach(function (id) { var d = DISP[id]; base[id] = id === "core" ? 14 : (d && d.kind === "fn" ? 10.5 : (d && d.kind === "area" ? 12.5 : 11.5)); nodeEls[id].t.setAttribute("font-size", base[id]); });
+    ids.forEach(function (id) { try { w[id] = nodeEls[id].t.getComputedTextLength(); } catch (e) { w[id] = 0; } });
+    ids.forEach(function (id) { if (w[id] > pos[id].w - 10) nodeEls[id].t.setAttribute("font-size", (base[id] * (pos[id].w - 10) / w[id]).toFixed(2)); });
   }
   buildMap();
 
