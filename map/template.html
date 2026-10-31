@@ -290,6 +290,7 @@ body.hack .flow-edge { stroke: #39ff14; }
   .selbar { padding: var(--s4); }
   .summary { font-size: .94rem; }
 }
+[dir="ltr"] .where { text-align: left; }
 </style>
 </head>
 <body>
@@ -299,66 +300,66 @@ body.hack .flow-edge { stroke: #39ff14; }
       <span class="logo" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="13" cy="13" r="3.2" fill="currentColor"/><circle cx="4.5" cy="7" r="2"/><circle cx="21.5" cy="6" r="2"/><circle cx="20" cy="21" r="2"/><circle cx="6" cy="20" r="2"/><path d="M11 11.2 6 8M15 11.5l5-4M15 15l4 4.4M11 15l-3.6 3.6"/></svg></span>
       <div><h1 id="projName">خريطة الأثر</h1><p id="intro"></p></div>
     </div>
-    <nav class="tabs" aria-label="العرض">
-      <button type="button" id="tabMap" aria-pressed="true">خريطة المشروع</button>
-      <button type="button" id="tabAppr" aria-pressed="false">الصلاحيات</button>
+    <nav class="tabs" aria-label="العرض" data-en-aria="View">
+      <button type="button" id="tabMap" aria-pressed="true" data-en="Project map">خريطة المشروع</button>
+      <button type="button" id="tabAppr" aria-pressed="false" data-en="Permissions">الصلاحيات</button>
     </nav>
   </header>
   <p class="notice" id="limits" hidden></p>
 
   <main class="workspace">
-      <section class="stage" id="stage" aria-label="الخريطة">
-        <div class="hud hud-tools" role="group" aria-label="أدوات العرض">
-          <button type="button" id="bTheme" class="theme" title="فاتح / داكن" aria-label="تبديل الوضع الفاتح والداكن"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 2a7 7 0 0 1 0 14z" fill="currentColor"/></svg></button>
-          <button type="button" id="bFull" class="txt" aria-pressed="false" title="اعرض كل الدوال والتفرعات">كل التفاصيل</button>
-          <button type="button" id="bIn" title="تقريب" aria-label="تقريب">+</button>
-          <button type="button" id="bOut" title="تبعيد" aria-label="تبعيد">&minus;</button>
-          <button type="button" id="bReset" title="إعادة الزاوية" aria-label="إعادة الزاوية">&#9678;</button>
+      <section class="stage" id="stage" aria-label="الخريطة" data-en-aria="Map">
+        <div class="hud hud-tools" role="group" aria-label="أدوات العرض" data-en-aria="View tools">
+          <button type="button" id="bTheme" class="theme" title="فاتح / داكن" aria-label="تبديل الوضع الفاتح والداكن" data-en-title="Light / dark" data-en-aria="Switch between light and dark"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 2a7 7 0 0 1 0 14z" fill="currentColor"/></svg></button>
+          <button type="button" id="bFull" class="txt" aria-pressed="false" title="اعرض كل الدوال والتفرعات" data-en="All details" data-en-title="Show every function and branch">كل التفاصيل</button>
+          <button type="button" id="bIn" title="تقريب" aria-label="تقريب" data-en-title="Zoom in" data-en-aria="Zoom in">+</button>
+          <button type="button" id="bOut" title="تبعيد" aria-label="تبعيد" data-en-title="Zoom out" data-en-aria="Zoom out">&minus;</button>
+          <button type="button" id="bReset" title="إعادة الزاوية" aria-label="إعادة الزاوية" data-en-title="Reset view" data-en-aria="Reset view">&#9678;</button>
         </div>
-        <svg id="map" role="group" aria-label="خريطة أجزاء المشروع">
+        <svg id="map" role="group" aria-label="خريطة أجزاء المشروع" data-en-aria="Map of the project's parts">
           <defs><marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z"></path></marker></defs>
           <g id="treeLayer"></g><g id="flowLayer"></g><g id="nodeLayer"></g>
         </svg>
-        <svg id="permMap" role="group" aria-label="خريطة الصلاحيات" hidden></svg>
+        <svg id="permMap" role="group" aria-label="خريطة الصلاحيات" data-en-aria="Permissions map" hidden></svg>
         <div class="hud hud-sum" id="hudSum" aria-live="polite"></div>
-        <p class="hud hud-hint" id="hint">اسحب لتحريك الخريطة · عجلة الماوس للتقريب · اضغط على أي جزء</p>
-        <ul class="hud hud-legend" id="legendMap" aria-label="دليل الألوان">
-          <li><span class="dot target"></span>ما ستعدّله</li>
-          <li><span class="dot removed"></span>ما سيُحذف</li>
-          <li><span class="dot direct"></span>يتأثر مباشرة</li>
-          <li><span class="dot indirect"></span>قد يتأثر</li>
-          <li><span class="dot safe"></span>سليم</li>
+        <p class="hud hud-hint" id="hint" data-en="Drag to move the map · mouse wheel to zoom · click any part">اسحب لتحريك الخريطة · عجلة الماوس للتقريب · اضغط على أي جزء</p>
+        <ul class="hud hud-legend" id="legendMap" aria-label="دليل الألوان" data-en-aria="Color guide">
+          <li><span class="dot target"></span><span data-en="What you edit">ما ستعدّله</span></li>
+          <li><span class="dot removed"></span><span data-en="What gets deleted">ما سيُحذف</span></li>
+          <li><span class="dot direct"></span><span data-en="Directly affected">يتأثر مباشرة</span></li>
+          <li><span class="dot indirect"></span><span data-en="May be affected">قد يتأثر</span></li>
+          <li><span class="dot safe"></span><span data-en="Fine">سليم</span></li>
         </ul>
-        <ul class="hud hud-legend" id="legendHack" aria-label="دليل خريطة الصلاحيات" hidden>
-          <li><span class="dot removed"></span>خطر</li>
-          <li><span class="dot direct"></span>انتباه</li>
-          <li><span class="dot safe"></span>آمن</li>
+        <ul class="hud hud-legend" id="legendHack" aria-label="دليل خريطة الصلاحيات" data-en-aria="Permissions map guide" hidden>
+          <li><span class="dot removed"></span><span data-en="Danger">خطر</span></li>
+          <li><span class="dot direct"></span><span data-en="Caution">انتباه</span></li>
+          <li><span class="dot safe"></span><span data-en="Safe">آمن</span></li>
         </ul>
         <p class="hud prompt" id="hackPrompt" hidden></p>
       </section>
-      <div class="strip" id="strip" role="group" aria-label="أجزاء المشروع"></div>
+      <div class="strip" id="strip" role="group" aria-label="أجزاء المشروع" data-en-aria="Project parts"></div>
 
     <section class="panel selbar" id="panel" aria-live="polite">
       <div class="titlerow">
         <div><h2 id="selName"></h2><p class="sel-desc" id="selDesc"></p><p class="where" id="selWhere"></p></div>
-        <button type="button" class="back" id="renameBtn">غيّر الاسم</button>
+        <button type="button" class="back" id="renameBtn" data-en="Rename">غيّر الاسم</button>
       </div>
       <div class="conf" id="selConf"></div>
     </section>
     <div class="cols2" id="cols">
-      <section class="panel col col-modify" id="colModify" aria-label="لو عدّلت هذا الجزء">
-        <div class="colhead"><h3>لو عدّلته</h3><button type="button" class="back showmap" id="mModify" aria-pressed="true">على الخريطة</button></div>
+      <section class="panel col col-modify" id="colModify" aria-label="لو عدّلت هذا الجزء" data-en-aria="If you edit this part">
+        <div class="colhead"><h3 data-en="If you edit it">لو عدّلته</h3><button type="button" class="back showmap" id="mModify" aria-pressed="true" data-en="Show on map">على الخريطة</button></div>
         <p class="summary" id="sumM"></p><div class="chips" id="chipsM"></div><div id="grpM" class="grp"></div>
       </section>
-      <section class="panel col col-delete" id="colDelete" aria-label="لو حذفت هذا الجزء">
-        <div class="colhead"><h3>لو حذفته</h3><button type="button" class="back showmap" id="mDelete" aria-pressed="false">على الخريطة</button></div>
+      <section class="panel col col-delete" id="colDelete" aria-label="لو حذفت هذا الجزء" data-en-aria="If you delete this part">
+        <div class="colhead"><h3 data-en="If you delete it">لو حذفته</h3><button type="button" class="back showmap" id="mDelete" aria-pressed="false" data-en="Show on map">على الخريطة</button></div>
         <p class="summary" id="sumD"></p><div class="chips" id="chipsD"></div><div id="grpD" class="grp"></div>
       </section>
     </div>
     <section class="panel" id="permPanel" aria-live="polite" hidden></section>
   </main>
 
-  <section class="proof" id="proof" aria-label="مدى دقة الخريطة"></section>
+  <section class="proof" id="proof" aria-label="مدى دقة الخريطة" data-en-aria="How accurate the map is"></section>
 </div>
 
 <script>
@@ -371,13 +372,26 @@ body.hack .flow-edge { stroke: #39ff14; }
   var AREAS = /*AREAS*/null;
   var APPR = /*APPROVALS*/null;
   var PROJECT = /*PROJECT*/null;
+  var LANG = PROJECT.lang === "en" ? "en" : "ar", EN = LANG === "en";
+  function T(ar, en) { return EN ? en : ar; }
+  var COMMA = EN ? ", " : "، ", AND = EN ? " and " : " و", Q1 = EN ? "\"" : "«", Q2 = EN ? "\"" : "»";
+  function q(x) { return Q1 + x + Q2; }
+  function listJoin(a) { return EN ? (a.length > 2 ? a.slice(0, -1).join(", ") + " and " + a[a.length - 1] : a.join(" and ")) : a.join(AND); }
+  if (EN) {
+    document.documentElement.lang = "en"; document.documentElement.dir = "ltr";
+    document.querySelectorAll("[data-en],[data-en-aria],[data-en-title]").forEach(function (e) {
+      if (e.hasAttribute("data-en")) e.textContent = e.getAttribute("data-en");
+      if (e.hasAttribute("data-en-aria")) e.setAttribute("aria-label", e.getAttribute("data-en-aria"));
+      if (e.hasAttribute("data-en-title")) e.setAttribute("title", e.getAttribute("data-en-title"));
+    });
+  }
   var LSKEY = "impact:" + PROJECT.name + ":names";
   function loadNames() { try { return JSON.parse(localStorage.getItem(LSKEY) || "{}") || {}; } catch (e) { return {}; } }
   function saveNames(n) { try { localStorage.setItem(LSKEY, JSON.stringify(n)); } catch (e) {} }
   var NM = loadNames();
-  document.title = "خريطة الأثر · " + PROJECT.name;
-  $("projName").textContent = "خريطة " + PROJECT.name;
-  $("intro").textContent = PROJECT.stats.files + " ملف و" + PROJECT.stats.functions + " دالة، مرسومة من الكود نفسه. اضغط أي جزء، واختر «تعديل» أو «حذف» لتشوف شو رح يتأثر قبل ما تلمس شي.";
+  document.title = T("خريطة الأثر · ", "Impact Map · ") + PROJECT.name;
+  $("projName").textContent = T("خريطة ", "Impact map of ") + PROJECT.name;
+  $("intro").textContent = EN ? PROJECT.stats.files + " files and " + PROJECT.stats.functions + " functions, drawn from the code itself. Click any part and see what will be affected if you edit or delete it, before you touch anything." : PROJECT.stats.files + " ملف و" + PROJECT.stats.functions + " دالة، مرسومة من الكود نفسه. اضغط أي جزء، واختر «تعديل» أو «حذف» لتشوف شو رح يتأثر قبل ما تلمس شي.";
   if (PROJECT.warnings && PROJECT.warnings.length) { var lim = $("limits"); lim.hidden = false; lim.textContent = PROJECT.warnings.join(" · "); }
 
   // ---- graph lookups ---------------------------------------------------------------------
@@ -387,13 +401,13 @@ body.hack .flow-edge { stroke: #39ff14; }
   function descendants(id) { var out = []; (KIDS[id] || []).forEach(function (c) { out.push(c); out = out.concat(descendants(c)); }); return out; }
   function label(id) {
     var n = NODE[id];
-    if (n.kind === "route") return "طلب " + n.name;
-    if (n.kind === "top") return "الكود الرئيسي لملف " + n.file.split("/").pop();
-    if (n.kind === "data") return "بيانات " + n.name;
+    if (n.kind === "route") return T("طلب ", "request ") + n.name;
+    if (n.kind === "top") return T("الكود الرئيسي لملف ", "main code of ") + n.file.split("/").pop();
+    if (n.kind === "data") return T("بيانات ", "data ") + n.name;
     return n.name;
   }
   function where(id) { var n = NODE[id]; return n.kind === "route" || n.kind === "top" ? n.file : n.file + ":" + n.start; }
-  var HOW = { calls: "يستدعي", passes: "يمرّر", uses: "يقرأ", network: "يرسل طلباً إلى" };
+  var HOW = EN ? { calls: "calls", passes: "passes", uses: "reads", network: "sends a request to" } : { calls: "يستدعي", passes: "يمرّر", uses: "يقرأ", network: "يرسل طلباً إلى" };
 
   // ---- display nodes (areas and leaves) -------------------------------------------------------
   var DISP = {}, order = [];
@@ -577,7 +591,7 @@ body.hack .flow-edge { stroke: #39ff14; }
   }
 
   var BADGE = { removed: ["✕", "b-removed"], target: ["✎", "b-target"], direct: ["!", "b-direct"], indirect: ["~", "b-indirect"], safe: ["✓", "b-safe"] };
-  var STATUS = { target: "ستعدّله", removed: "سيُحذف", direct: "يتأثر مباشرة", indirect: "قد يتأثر", safe: "سليم" };
+  var STATUS = EN ? { target: "to edit", removed: "will be deleted", direct: "directly affected", indirect: "may be affected", safe: "fine" } : { target: "ستعدّله", removed: "سيُحذف", direct: "يتأثر مباشرة", indirect: "قد يتأثر", safe: "سليم" };
 
 
   var STCOL = { target: "var(--target)", removed: "var(--removed)", direct: "var(--direct)", indirect: "var(--indirect)", safe: "var(--safe)" };
@@ -597,8 +611,8 @@ body.hack .flow-edge { stroke: #39ff14; }
       if (pb) { pb.i.style.setProperty("--c", STCOL[gs.state]); pb.b.setAttribute("aria-pressed", d.id === state.sel ? "true" : "false"); }
       ne.g.setAttribute("class", "node " + d.kind + " st-" + gs.state + (d.id === state.sel ? " sel" : ""));
       ne.g.setAttribute("aria-pressed", d.id === state.sel ? "true" : "false");
-      ne.g.setAttribute("aria-label", d.name + ": " + STATUS[gs.state] + (gs.hit ? " (" + gs.hit + " من " + gs.total + " دالة)" : ""));
-      if (d.kind !== "fn") ne.s.textContent = gs.hit ? gs.hit + " من " + gs.total : gs.total + " دالة";
+      ne.g.setAttribute("aria-label", d.name + ": " + STATUS[gs.state] + (gs.hit ? " (" + gs.hit + T(" من ", " of ") + gs.total + T(" دالة)", " functions)") : ""));
+      if (d.kind !== "fn") ne.s.textContent = gs.hit ? gs.hit + T(" من ", " of ") + gs.total : gs.total + T(" دالة", " functions");
       var bd = BADGE[gs.state]; ne.badge.setAttribute("class", "badge " + bd[1]); ne.badge.setAttribute("visibility", "visible"); ne.bt.textContent = bd[0];
     });
     nodeEls.core.g.setAttribute("class", "node core");
@@ -615,13 +629,13 @@ body.hack .flow-edge { stroke: #39ff14; }
   function chip(cls, text) { var s = document.createElement("span"); s.className = "chip " + cls; s.textContent = text; return s; }
   var UNITS = order.filter(function (g) { return g.kind === "leaf" || (g.kind === "area" && !g.leaves.length); });
   function unitName(u) { return u.kind === "leaf" ? u.name + " · " + DISP[u.area].name : u.name; }
-  function names(arr) { return arr.map(function (u) { return "«" + unitName(u) + "»"; }).join("، "); }
+  function names(arr) { var l = arr.map(function (u) { return q(unitName(u)); }); return EN ? listJoin(l) : l.join(COMMA); }
   function fnText(id) { var n = NODE[id]; return n.kind === "function" ? n.name + "()" : label(id); }
   function because(u, res) {
     var via = {};
     u.members.forEach(function (m) { var inf = res.info[m]; if (inf) { var h = HOME[inf.via]; if (h && h !== u.id) via[h] = 1; } });
-    var list = Object.keys(via).map(function (id) { return "«" + unitName(DISP[id]) + "»"; });
-    return list.length ? "لأنه بيعتمد على " + list.slice(0, 2).join(" و") + (list.length > 2 ? " وغيرها" : "") : "";
+    var list = Object.keys(via).map(function (id) { return q(unitName(DISP[id])); });
+    return list.length ? T("لأنه بيعتمد على ", "because it depends on ") + list.slice(0, 2).join(AND) + (list.length > 2 ? T(" وغيرها", " and others") : "") : "";
   }
   function unitBlock(cls, title, units, res) {
     if (!units.length) return null;
@@ -632,7 +646,7 @@ body.hack .flow-edge { stroke: #39ff14; }
       var gs = groupState(u, res), li = document.createElement("li"), b = document.createElement("b"), s1 = document.createElement("span"), s2 = document.createElement("span");
       li.className = "unit"; b.textContent = unitName(u); s1.textContent = u.desc;
       var why = because(u, res);
-      s2.textContent = gs.hit + " من " + gs.total + " دالة" + (why ? " · " + why : "");
+      s2.textContent = gs.hit + T(" من ", " of ") + gs.total + T(" دالة", " functions") + (why ? " · " + why : "");
       li.appendChild(b); li.appendChild(s1); li.appendChild(s2); ul.appendChild(li);
     });
     d.appendChild(ul); return d;
@@ -645,10 +659,10 @@ body.hack .flow-edge { stroke: #39ff14; }
     ids.slice(0, 40).forEach(function (id) {
       var li = document.createElement("li"), b = document.createElement("b"), w = document.createElement("span");
       b.className = "fn"; b.textContent = fnText(id) + " "; w.className = "ltr"; w.textContent = where(id); b.appendChild(w); li.appendChild(b);
-      var inf = res.info[id]; if (inf) { var sp = document.createElement("span"); sp.textContent = HOW[inf.how] + " «" + label(inf.via) + "»"; li.appendChild(sp); }
+      var inf = res.info[id]; if (inf) { var sp = document.createElement("span"); sp.textContent = HOW[inf.how] + " " + q(label(inf.via)); li.appendChild(sp); }
       ul.appendChild(li);
     });
-    if (ids.length > 40) { var more = document.createElement("li"), sp2 = document.createElement("span"); sp2.textContent = "و" + (ids.length - 40) + " دالة أخرى."; more.appendChild(sp2); ul.appendChild(more); }
+    if (ids.length > 40) { var more = document.createElement("li"), sp2 = document.createElement("span"); sp2.textContent = EN ? "and " + (ids.length - 40) + " more functions." : "و" + (ids.length - 40) + " دالة أخرى."; more.appendChild(sp2); ul.appendChild(more); }
     d.appendChild(ul); return d;
   }
 
@@ -663,35 +677,37 @@ body.hack .flow-edge { stroke: #39ff14; }
     });
     var picked = UNITS.filter(function (u) { return u.members.some(function (m) { return TARGETSET[m]; }); });
     var alsoGone = U.removed.filter(function (u) { return picked.indexOf(u) < 0; });
-    var nm = "«" + d.name + "»", t;
+    var nm = q(d.name), t;
     if (mode === "delete") {
-      t = "لو حذفت " + nm + ": " + (U.direct.length ? "رح يتعطّل أو يتغيّر شي بـ " + names(U.direct) + "." : "ما رح يتعطّل شي بشكل مباشر.");
-      if (alsoGone.length) t += " ورح ينحذف معه كمان " + names(alsoGone) + ".";
-      if (U.indirect.length) t += " وممكن يتأثر بشكل غير مباشر: " + names(U.indirect) + ".";
+      t = EN ? "If you delete " + nm + ": " + (U.direct.length ? "something will break or change in " + names(U.direct) + "." : "nothing breaks directly.")
+             : "لو حذفت " + nm + ": " + (U.direct.length ? "رح يتعطّل أو يتغيّر شي بـ " + names(U.direct) + "." : "ما رح يتعطّل شي بشكل مباشر.");
+      if (alsoGone.length) t += EN ? " " + names(alsoGone) + " will also be deleted with it." : " ورح ينحذف معه كمان " + names(alsoGone) + ".";
+      if (U.indirect.length) t += EN ? " It may also affect, indirectly: " + names(U.indirect) + "." : " وممكن يتأثر بشكل غير مباشر: " + names(U.indirect) + ".";
     } else {
-      t = "لو عدّلت " + nm + ": " + (U.direct.length ? "لازم تتأكد بعد التعديل من " + names(U.direct) + "." : "ما في جزء بيعتمد عليه مباشرة.");
-      if (U.indirect.length) t += " وممكن يمتد الأثر لـ " + names(U.indirect) + ".";
+      t = EN ? "If you edit " + nm + ": " + (U.direct.length ? "after the change, double-check " + names(U.direct) + "." : "no part depends on it directly.")
+             : "لو عدّلت " + nm + ": " + (U.direct.length ? "لازم تتأكد بعد التعديل من " + names(U.direct) + "." : "ما في جزء بيعتمد عليه مباشرة.");
+      if (U.indirect.length) t += EN ? " The effect may reach " + names(U.indirect) + "." : " وممكن يمتد الأثر لـ " + names(U.indirect) + ".";
     }
-    if (!U.direct.length && !U.indirect.length && !alsoGone.length) t += " لا شي تاني بيعتمد عليه بحسب الخريطة.";
+    if (!U.direct.length && !U.indirect.length && !alsoGone.length) t += T(" لا شي تاني بيعتمد عليه بحسب الخريطة.", " According to the map, nothing else depends on it.");
     $(H.sum).textContent = t;
     var chips = $(H.chips); chips.textContent = "";
-    chips.appendChild(chip(mode === "delete" ? "removed" : "target", (mode === "delete" ? "ينحذف " : "تعدّل ") + U.removed.length + " جزء"));
-    chips.appendChild(chip("direct", "يتأثر مباشرة " + U.direct.length));
-    chips.appendChild(chip("indirect", "ممكن يتأثر " + U.indirect.length));
-    chips.appendChild(chip("safe", "سليم " + U.safe.length));
+    chips.appendChild(chip(mode === "delete" ? "removed" : "target", (EN ? (mode === "delete" ? "Deletes " : "Edits ") + U.removed.length + (U.removed.length === 1 ? " part" : " parts") : (mode === "delete" ? "ينحذف " : "تعدّل ") + U.removed.length + " جزء")));
+    chips.appendChild(chip("direct", T("يتأثر مباشرة ", "Directly affected ") + U.direct.length));
+    chips.appendChild(chip("indirect", T("ممكن يتأثر ", "May be affected ") + U.indirect.length));
+    chips.appendChild(chip("safe", T("سليم ", "Fine ") + U.safe.length));
     var gs = $(H.grp); gs.textContent = "";
-    [mode === "delete" && alsoGone.length ? unitBlock("removed", "ينحذف معه", alsoGone, res) : null,
-     unitBlock("direct", mode === "delete" ? "رح يتعطّل أو يتغيّر" : "لازم تتأكد منه", U.direct, res),
-     unitBlock("indirect", "ممكن يتأثر", U.indirect, res)].forEach(function (b) { if (b) gs.appendChild(b); });
-    if (U.safe.length) { var sl = document.createElement("p"); sl.className = "safe-line"; sl.textContent = "أجزاء ما رح تتأثر: " + U.safe.map(unitName).join("، ") + "."; gs.appendChild(sl); }
+    [mode === "delete" && alsoGone.length ? unitBlock("removed", T("ينحذف معه", "Deleted with it"), alsoGone, res) : null,
+     unitBlock("direct", mode === "delete" ? T("رح يتعطّل أو يتغيّر", "Will break or change") : T("لازم تتأكد منه", "Check these"), U.direct, res),
+     unitBlock("indirect", T("ممكن يتأثر", "May be affected"), U.indirect, res)].forEach(function (b) { if (b) gs.appendChild(b); });
+    if (U.safe.length) { var sl = document.createElement("p"); sl.className = "safe-line"; sl.textContent = T("أجزاء ما رح تتأثر: ", "Parts that will not be affected: ") + U.safe.map(unitName).join(COMMA) + "."; gs.appendChild(sl); }
     var all = Object.keys(NODE), direct = [], indirect = [], gone = [];
     all.forEach(function (id) {
       if (res.removed[id]) { if (!TARGETSET[id]) gone.push(id); return; }
       if (res.info[id]) (res.info[id].d === 1 ? direct : indirect).push(id);
     });
     var det = document.createElement("details"), sm = document.createElement("summary");
-    sm.textContent = "التفاصيل التقنية: أسماء الدوال وأرقام السطور"; det.appendChild(sm);
-    [mode === "delete" ? fnBlock("دوال تنحذف معه", gone, res) : null, fnBlock("دوال تتأثر مباشرة", direct, res), fnBlock("دوال قد تتأثر", indirect, res)].forEach(function (b) { if (b) { det.appendChild(b); det.appendChild(document.createElement("br")); } });
+    sm.textContent = T("التفاصيل التقنية: أسماء الدوال وأرقام السطور", "Technical details: function names and line numbers"); det.appendChild(sm);
+    [mode === "delete" ? fnBlock(T("دوال تنحذف معه", "Functions deleted with it"), gone, res) : null, fnBlock(T("دوال تتأثر مباشرة", "Functions directly affected"), direct, res), fnBlock(T("دوال قد تتأثر", "Functions that may be affected"), indirect, res)].forEach(function (b) { if (b) { det.appendChild(b); det.appendChild(document.createElement("br")); } });
     gs.appendChild(det);
     state.mode = saved;
     return { res: res, U: U, gone: alsoGone.length };
@@ -701,7 +717,7 @@ body.hack .flow-edge { stroke: #39ff14; }
     var files = {}; d.members.forEach(function (m) { files[NODE[m].file] = 1; });
     $("selName").textContent = d.name + (d.kind === "leaf" ? " · " + DISP[d.area].name : (d.kind === "fn" ? " · " + unitName(DISP[d.area]) : "")); $("renameBtn").hidden = d.kind === "fn";
     $("selDesc").textContent = d.desc;
-    var fl = Object.keys(files); $("selWhere").textContent = d.members.length + " من الدوال والأجزاء، في " + (fl.length > 4 ? fl.length + " ملف: " + fl.slice(0, 3).join("، ") + " وغيرها" : fl.join(" و"));
+    var fl = Object.keys(files); $("selWhere").textContent = EN ? d.members.length + " functions and parts, in " + (fl.length > 4 ? fl.length + " files: " + fl.slice(0, 3).join(", ") + " and others" : listJoin(fl)) : d.members.length + " من الدوال والأجزاء، في " + (fl.length > 4 ? fl.length + " ملف: " + fl.slice(0, 3).join("، ") + " وغيرها" : fl.join(" و"));
     var M = renderMode("modify", d), D = renderMode("delete", d);
     paint((state.mode === "delete" ? D : M).res);
     $("mModify").setAttribute("aria-pressed", String(state.mode === "modify")); $("mDelete").setAttribute("aria-pressed", String(state.mode === "delete"));
@@ -709,14 +725,14 @@ body.hack .flow-edge { stroke: #39ff14; }
     var hs = $("hudSum"); hs.textContent = "";
     var b = document.createElement("b"); b.textContent = d.name; hs.appendChild(b);
     function line(cls, txt) { var l = document.createElement("span"); l.className = cls; l.textContent = txt; hs.appendChild(l); }
-    line("m", "لو عدّلته: " + M.U.direct.length + " يتأثر مباشرة · " + M.U.indirect.length + " ممكن");
-    line("x", "لو حذفته: " + (D.U.direct.length + D.gone) + " يتعطّل · " + D.U.indirect.length + " ممكن");
-    var C = confidenceOf(G, d.members, "ar"), CL = { high: "عالية", medium: "متوسطة", low: "منخفضة" }[C.level];
-    line("c c-" + C.level, "الثقة بالنتيجة: " + CL);
+    line("m", EN ? "If you edit it: " + M.U.direct.length + " directly affected · " + M.U.indirect.length + " maybe" : "لو عدّلته: " + M.U.direct.length + " يتأثر مباشرة · " + M.U.indirect.length + " ممكن");
+    line("x", EN ? "If you delete it: " + (D.U.direct.length + D.gone) + " break · " + D.U.indirect.length + " maybe" : "لو حذفته: " + (D.U.direct.length + D.gone) + " يتعطّل · " + D.U.indirect.length + " ممكن");
+    var C = confidenceOf(G, d.members, LANG), CL = (EN ? { high: "high", medium: "medium", low: "low" } : { high: "عالية", medium: "متوسطة", low: "منخفضة" })[C.level];
+    line("c c-" + C.level, T("الثقة بالنتيجة: ", "Confidence: ") + CL);
     var box = $("selConf"); box.textContent = ""; box.className = "conf c-" + C.level;
     var head = document.createElement("p"); head.className = "conf-head";
-    var tag = document.createElement("span"); tag.className = "conf-tag"; tag.textContent = "الثقة: " + CL;
-    var why = document.createElement("span"); why.textContent = { high: "الخريطة شايفة كل الروابط لهالجزء.", medium: "ممكن الخريطة ما شايفة كل شي حواليه. راجع هالنقاط:", low: "ممكن في شي بيستعمله والخريطة ما شايفته. تأكد قبل ما تحذف أو تعدّل:" }[C.level];
+    var tag = document.createElement("span"); tag.className = "conf-tag"; tag.textContent = T("الثقة: ", "Confidence: ") + CL;
+    var why = document.createElement("span"); why.textContent = (EN ? { high: "The map sees every link to this part.", medium: "The map may not see everything around it. Check these points:", low: "Something may use it that the map cannot see. Check before you delete or edit:" } : { high: "الخريطة شايفة كل الروابط لهالجزء.", medium: "ممكن الخريطة ما شايفة كل شي حواليه. راجع هالنقاط:", low: "ممكن في شي بيستعمله والخريطة ما شايفته. تأكد قبل ما تحذف أو تعدّل:" })[C.level];
     head.appendChild(tag); head.appendChild(why); box.appendChild(head);
     if (C.level !== "high") { var ul = document.createElement("ul"); C.reasons.forEach(function (r) { var li = document.createElement("li"); li.textContent = r; ul.appendChild(li); }); box.appendChild(ul); }
   }
@@ -738,35 +754,35 @@ body.hack .flow-edge { stroke: #39ff14; }
   var UNITS = order.filter(function (g) { return g.kind === "leaf" || (g.kind === "area" && !g.leaves.length); });
   function unitCaps(u) { var c = {}; u.members.forEach(function (m) { (NODE[m].caps || []).forEach(function (k) { (c[k] = c[k] || []).push(m); }); }); return c; }
   function unitName(u) { return u.kind === "leaf" ? u.name + " · " + DISP[u.area].name : u.name; }
-  var CAPLBL = { delete: "يمسح ملفات", send: "يرسل للإنترنت", install: "يثبّت برامج", code: "يشغّل أي كود", secrets: "يقرأ الأسرار", outside: "برا المشروع", modify: "يعدّل ملفات" };
+  var CAPLBL = EN ? { delete: "deletes files", send: "sends to the internet", install: "installs programs", code: "runs any code", secrets: "reads secrets", outside: "outside the project", modify: "edits files" } : { delete: "يمسح ملفات", send: "يرسل للإنترنت", install: "يثبّت برامج", code: "يشغّل أي كود", secrets: "يقرأ الأسرار", outside: "برا المشروع", modify: "يعدّل ملفات" };
   var CAPSTATE = { delete: "danger", send: "danger", install: "danger", code: "danger", secrets: "danger", outside: "watch", modify: "watch" };
-  var CAPEXPL = { delete: "يقدر يمسح ملفات بدون تراجع.", send: "يقدر يرسل بيانات للإنترنت أو ينشر.", install: "يقدر ينزّل ويثبّت برامج وحزماً على جهازك.", code: "يقدر يشغّل أي كود، فكل شي ممكن.", secrets: "يقدر يقرأ ملفات سرية: مفاتيح وكلمات سر.", outside: "يقدر يوصل لملفات برا مجلد المشروع.", modify: "يقدر يعدّل الملفات بدون ما يسألك." };
+  var CAPEXPL = EN ? { delete: "Can delete files with no undo.", send: "Can send data to the internet or publish.", install: "Can download and install programs and packages on your computer.", code: "Can run any code, so anything is possible.", secrets: "Can read secret files: keys and passwords.", outside: "Can reach files outside the project folder.", modify: "Can edit files without asking you." } : { delete: "يقدر يمسح ملفات بدون تراجع.", send: "يقدر يرسل بيانات للإنترنت أو ينشر.", install: "يقدر ينزّل ويثبّت برامج وحزماً على جهازك.", code: "يقدر يشغّل أي كود، فكل شي ممكن.", secrets: "يقدر يقرأ ملفات سرية: مفاتيح وكلمات سر.", outside: "يقدر يوصل لملفات برا مجلد المشروع.", modify: "يقدر يعدّل الملفات بدون ما يسألك." };
   var CATS = [
-    { id: "files", name: "الملفات", tools: ["Read", "Edit", "Write", "MultiEdit", "NotebookEdit", "Glob", "Grep", "LS", "additionalDirectories"] },
-    { id: "cmd", name: "الأوامر", tools: ["Bash"] },
-    { id: "net", name: "الإنترنت", tools: ["WebFetch", "WebSearch"] },
-    { id: "apps", name: "تطبيقات خارجية", tools: ["mcp"] },
-    { id: "agents", name: "وكلاء ومهارات", tools: ["Task", "Agent", "Skill", "TodoWrite"] },
-    { id: "mode", name: "الوضع العام", tools: ["mode"] },
-    { id: "deny", name: "الحمايات", tools: [] }
+    { id: "files", name: T("الملفات", "Files"), tools: ["Read", "Edit", "Write", "MultiEdit", "NotebookEdit", "Glob", "Grep", "LS", "additionalDirectories"] },
+    { id: "cmd", name: T("الأوامر", "Commands"), tools: ["Bash"] },
+    { id: "net", name: T("الإنترنت", "Internet"), tools: ["WebFetch", "WebSearch"] },
+    { id: "apps", name: T("تطبيقات خارجية", "External apps"), tools: ["mcp"] },
+    { id: "agents", name: T("وكلاء ومهارات", "Agents and skills"), tools: ["Task", "Agent", "Skill", "TodoWrite"] },
+    { id: "mode", name: T("الوضع العام", "General mode"), tools: ["mode"] },
+    { id: "deny", name: T("الحمايات", "Protections"), tools: [] }
   ];
-  var SRC = { user: "كل مشاريعك", project: "هالمشروع (مشترك)", local: "هالمشروع (عندك بس)" };
+  var SRC = EN ? { user: "All your projects", project: "This project (shared)", local: "This project (only you)" } : { user: "كل مشاريعك", project: "هالمشروع (مشترك)", local: "هالمشروع (عندك بس)" };
   var RISKS = { red: 2, yellow: 1, green: 0 };
   function parseRaw(raw) { var m = /^([A-Za-z_][\w-]*(?:__[\w.-]+)*)(?:\(([\s\S]*)\))?$/.exec(raw); return { tool: m ? m[1] : raw, spec: m ? m[2] : undefined }; }
   function toolOfRule(r) { if (r.isMode) return "mode"; if (r.raw.indexOf("additionalDirectories") === 0) return "additionalDirectories"; var t = parseRaw(r.raw).tool; return t.indexOf("mcp__") === 0 ? "mcp" : t; }
   function catOf(r) { if (r.kind === "deny") return "deny"; if (/^(enableAllProjectMcpServers|mcp server:)/.test(r.raw)) return "apps"; var t = toolOfRule(r); for (var i = 0; i < CATS.length; i++) if (CATS[i].tools.indexOf(t) >= 0) return CATS[i].id; return "agents"; }
   function shortOf(r) {
-    if (r.isMode) return "وضع " + r.raw.replace("mode: ", "");
-    if (r.raw.indexOf("enableAllProjectMcpServers") === 0) return "كل خوادم المشروع";
+    if (r.isMode) return T("وضع ", "mode ") + r.raw.replace("mode: ", "");
+    if (r.raw.indexOf("enableAllProjectMcpServers") === 0) return T("كل خوادم المشروع", "All project servers");
     if (r.raw.indexOf("mcp server:") === 0) return r.raw.split(": ")[1];
-    if (r.raw.indexOf("additionalDirectories") === 0) return "مجلد " + r.raw.split(": ")[1];
+    if (r.raw.indexOf("additionalDirectories") === 0) return T("مجلد ", "folder ") + r.raw.split(": ")[1];
     var q = parseRaw(r.raw), t = q.tool, sp = q.spec;
-    if (r.kind === "deny") return "ممنوع " + (sp || t);
-    if (t === "Bash") { if (sp === undefined || sp === "*") return "أي أمر"; var pre = sp.replace(/(:\*|\s?\*)$/, ""); return pre; }
-    if (["Edit", "Write", "MultiEdit", "NotebookEdit"].indexOf(t) >= 0) return "تعديل" + (sp ? " " + sp : "");
-    if (t === "Read") return "قراءة" + (sp ? " " + sp : "");
-    if (t === "WebFetch") return sp ? sp.replace(/^domain:/, "") : "أي موقع";
-    if (t === "WebSearch") return "بحث";
+    if (r.kind === "deny") return T("ممنوع ", "denied ") + (sp || t);
+    if (t === "Bash") { if (sp === undefined || sp === "*") return T("أي أمر", "any command"); var pre = sp.replace(/(:\*|\s?\*)$/, ""); return pre; }
+    if (["Edit", "Write", "MultiEdit", "NotebookEdit"].indexOf(t) >= 0) return T("تعديل", "edit") + (sp ? " " + sp : "");
+    if (t === "Read") return T("قراءة", "read") + (sp ? " " + sp : "");
+    if (t === "WebFetch") return sp ? sp.replace(/^domain:/, "") : T("أي موقع", "any site");
+    if (t === "WebSearch") return T("بحث", "search");
     if (t.indexOf("mcp__") === 0) { var p = t.split("__"); return p[2] ? p[1] + "/" + p[2] : p[1]; }
     return t;
   }
@@ -790,29 +806,29 @@ body.hack .flow-edge { stroke: #39ff14; }
       var mine = rs.filter(function (r) { return catOf(r) === c.id; }).sort(function (a, b) { return RISKS[b.risk] - RISKS[a.risk]; });
       if (!mine.length) return;
       var cut = mine.length > 3 && !FULL, shown = cut ? mine.slice(0, 2) : mine, hidden = cut ? mine.slice(2) : [];
-      var kids = shown.map(function (r) { var cp = capsOfRule(r); return { id: "r" + r._i, kind: "rule", rule: r, label: shortOf(r), sub: r.kind === "deny" ? "ممنوع" : (cp[0] ? CAPLBL[cp[0]] : (r.risk === "red" ? "خطر" : r.risk === "yellow" ? "بحذر" : "آمن")), state: r.kind === "deny" ? "ok" : stOf(r.risk) }; });
-      if (hidden.length) kids.push({ id: "more:" + c.id, kind: "more", rules: hidden, label: "+" + hidden.length + " أخرى", sub: "", state: worstSt(hidden.map(function (r) { return stOf(r.risk); })) });
-      groups.push({ node: { id: "cat:" + c.id, kind: "cat", cat: c, rules: mine, label: c.name, sub: mine.length + " صلاحية", state: c.id === "deny" ? "ok" : worstSt(mine.map(function (r) { return stOf(r.risk); })) }, kids: kids });
+      var kids = shown.map(function (r) { var cp = capsOfRule(r); return { id: "r" + r._i, kind: "rule", rule: r, label: shortOf(r), sub: r.kind === "deny" ? T("ممنوع", "denied") : (cp[0] ? CAPLBL[cp[0]] : (r.risk === "red" ? T("خطر", "danger") : r.risk === "yellow" ? T("بحذر", "careful") : T("آمن", "safe"))), state: r.kind === "deny" ? "ok" : stOf(r.risk) }; });
+      if (hidden.length) kids.push({ id: "more:" + c.id, kind: "more", rules: hidden, label: "+" + hidden.length + T(" أخرى", " more"), sub: "", state: worstSt(hidden.map(function (r) { return stOf(r.risk); })) });
+      groups.push({ node: { id: "cat:" + c.id, kind: "cat", cat: c, rules: mine, label: c.name, sub: mine.length + T(" صلاحية", " permissions"), state: c.id === "deny" ? "ok" : worstSt(mine.map(function (r) { return stOf(r.risk); })) }, kids: kids });
     });
-    return { center: { id: "c", kind: "center", label: "صلاحيات Claude", sub: rs.filter(function (r) { return r.kind === "allow"; }).length + " دائمة" }, groups: groups };
+    return { center: { id: "c", kind: "center", label: T("صلاحيات Claude", "Claude's permissions"), sub: rs.filter(function (r) { return r.kind === "allow"; }).length + T(" دائمة", " standing") }, groups: groups };
   }
   function affectedKids(cap) {
     function withCaps(keys) { return UNITS.filter(function (u) { var c = unitCaps(u); return keys.some(function (k) { return c[k]; }); }); }
     var list;
-    if (cap === "modify" || cap === "delete" || cap === "code") return [{ id: "all:" + cap, kind: "all", label: "كل أجزاء المشروع", sub: UNITS.length + " جزء", state: cap === "modify" ? "watch" : "danger" }];
-    if (cap === "install") return [{ id: "ext:install", kind: "ext", label: "برامج جهازك", sub: "", state: "danger" }];
-    if (cap === "outside") return [{ id: "ext:outside", kind: "ext", label: "ملفاتك برا المشروع", sub: "", state: "watch" }];
+    if (cap === "modify" || cap === "delete" || cap === "code") return [{ id: "all:" + cap, kind: "all", label: T("كل أجزاء المشروع", "Every part of the project"), sub: UNITS.length + T(" جزء", " parts"), state: cap === "modify" ? "watch" : "danger" }];
+    if (cap === "install") return [{ id: "ext:install", kind: "ext", label: T("برامج جهازك", "Programs on your computer"), sub: "", state: "danger" }];
+    if (cap === "outside") return [{ id: "ext:outside", kind: "ext", label: T("ملفاتك برا المشروع", "Your files outside the project"), sub: "", state: "watch" }];
     list = cap === "send" ? withCaps(["NET", "AI", "SRV"]) : withCaps(["KEY", "STO", "DB"]);
     var kids = list.slice(0, FULL ? list.length : 3).map(function (u) { var c = unitCaps(u); return { id: "u:" + cap + ":" + u.id, kind: "unit", unit: u, label: u.name, sub: Object.keys(c).join(" "), state: (c.KEY || c.AI || c.DB) ? "danger" : "watch" }; });
-    if (list.length > 3 && !FULL) kids.push({ id: "umore:" + cap, kind: "umore", units: list.slice(3), label: "+" + (list.length - 3) + " أجزاء", sub: "", state: "watch" });
-    if (!kids.length) kids.push({ id: "none:" + cap, kind: "ext", label: "ما لقيت جزء متأثر", sub: "", state: "ok" });
+    if (list.length > 3 && !FULL) kids.push({ id: "umore:" + cap, kind: "umore", units: list.slice(3), label: "+" + (list.length - 3) + T(" أجزاء", " parts"), sub: "", state: "watch" });
+    if (!kids.length) kids.push({ id: "none:" + cap, kind: "ext", label: T("ما لقيت جزء متأثر", "No affected part found"), sub: "", state: "ok" });
     return kids;
   }
   function ruleTree(r) {
     var caps = capsOfRule(r), groups = [];
     caps.forEach(function (cap) { groups.push({ node: { id: "cap:" + cap, kind: "cap", cap: cap, label: CAPLBL[cap], sub: "", state: CAPSTATE[cap] }, kids: affectedKids(cap) }); });
-    if (!groups.length) groups.push({ node: { id: "cap:none", kind: "cap", cap: "none", label: r.kind === "deny" ? "محمي" : "ما فيه أثر خطر", sub: "", state: "ok" }, kids: [] });
-    return { center: { id: "c", kind: "center", label: shortOf(r), sub: r.kind === "deny" ? "ممنوع" : "صلاحية دائمة", state: stOf(r.risk) }, groups: groups };
+    if (!groups.length) groups.push({ node: { id: "cap:none", kind: "cap", cap: "none", label: r.kind === "deny" ? T("محمي", "protected") : T("ما فيه أثر خطر", "no dangerous effect"), sub: "", state: "ok" }, kids: [] });
+    return { center: { id: "c", kind: "center", label: shortOf(r), sub: r.kind === "deny" ? T("ممنوع", "denied") : T("صلاحية دائمة", "standing permission"), state: stOf(r.risk) }, groups: groups };
   }
 
   // layout: ellipses for the first and second ring, then push overlapping boxes apart
@@ -887,50 +903,50 @@ body.hack .flow-edge { stroke: #39ff14; }
     function add(tag, cls, text, parent) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; (parent || p).appendChild(e); return e; }
     function ruleRow(r, parent) {
       var x = add("div", "rule rowbtn r-" + (r.kind === "deny" ? "green" : r.risk), null, parent); x.setAttribute("role", "button"); x.tabIndex = 0;
-      add("b", "", r.plain, x); add("span", "worst", (r.kind === "deny" ? "" : "أسوأ شي بيغطيه: ") + r.worst, x);
+      add("b", "", r.plain, x); add("span", "worst", (r.kind === "deny" ? "" : T("أسوأ شي بيغطيه: ", "Worst case: ")) + r.worst, x);
       var m = add("span", "meta", (r.scopeText || "") + " · ", x); add("code", "", r.raw, m);
       x.addEventListener("click", function () { openRule(r); });
       x.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openRule(r); } });
     }
-    if (!APPR) { add("h2", "", "صلاحيات Claude"); add("p", "safe-line", "ما في موافقات محمّلة بعد."); return; }
+    if (!APPR) { add("h2", "", T("صلاحيات Claude", "Claude's permissions")); add("p", "safe-line", T("ما في موافقات محمّلة بعد.", "No approvals loaded yet.")); return; }
     if (PV.view === "rule") {
       var r = PV.rule, caps = capsOfRule(r);
-      var back = add("button", "back", "رجوع لكل الصلاحيات"); back.type = "button"; back.addEventListener("click", function () { PV = { view: "top", rule: null, sel: null }; drawPerm(); renderPermPanel(); });
+      var back = add("button", "back", T("رجوع لكل الصلاحيات", "Back to all permissions")); back.type = "button"; back.addEventListener("click", function () { PV = { view: "top", rule: null, sel: null }; drawPerm(); renderPermPanel(); });
       add("h2", "", shortOf(r));
       add("p", "sel-desc", r.plain);
-      add("p", "lead", (r.kind === "deny" ? "" : "أسوأ شي بيغطيه: ") + r.worst);
+      add("p", "lead", (r.kind === "deny" ? "" : T("أسوأ شي بيغطيه: ", "Worst case: ")) + r.worst);
       add("p", "meta", (r.scopeText || "") + " · " + r.raw);
-      add("h3", "", "شو تفرّع عنها");
-      if (!caps.length) add("p", "safe-line", r.kind === "deny" ? "هاي حماية: Claude ما بيقدر يعمل هالشي." : "ما فيها قدرة خطرة.");
+      add("h3", "", T("شو تفرّع عنها", "What branches from it"));
+      if (!caps.length) add("p", "safe-line", r.kind === "deny" ? T("هاي حماية: Claude ما بيقدر يعمل هالشي.", "This is a protection: Claude cannot do this.") : T("ما فيها قدرة خطرة.", "No dangerous capability."));
       caps.forEach(function (cap) {
-        var ks = affectedKids(cap), txt = ks.map(function (k) { return k.label + (k.sub && k.kind !== "unit" && k.kind !== "umore" ? " (" + k.sub + ")" : ""); }).join("، ");
+        var ks = affectedKids(cap), txt = ks.map(function (k) { return k.label + (k.sub && k.kind !== "unit" && k.kind !== "umore" ? " (" + k.sub + ")" : ""); }).join(COMMA);
         add("p", "chain", "[" + CAPLBL[cap] + "] ← " + txt);
       });
       if (PV.sel && PV._node) {
         var n = PV._node;
         add("h3", "", n.label);
         if (n.kind === "cap") add("p", "safe-line", CAPEXPL[n.cap] || "");
-        else if (n.kind === "unit") { var c = unitCaps(n.unit), ks2 = Object.keys(c); add("p", "safe-line", unitName(n.unit) + ": " + n.unit.desc); add("p", "safe-line", "قدراته: " + ks2.join(" ") + " (مكشوفة لهالصلاحية)."); }
-        else if (n.kind === "umore") add("p", "safe-line", n.units.map(unitName).join("، "));
-        else if (n.kind === "all") add("p", "safe-line", "الصلاحية بتغطي كل ملفات المشروع، فكل أجزاءه معرّضة.");
+        else if (n.kind === "unit") { var c = unitCaps(n.unit), ks2 = Object.keys(c); add("p", "safe-line", unitName(n.unit) + ": " + n.unit.desc); add("p", "safe-line", T("قدراته: ", "Its capabilities: ") + ks2.join(" ") + T(" (مكشوفة لهالصلاحية).", " (exposed to this permission).")); }
+        else if (n.kind === "umore") add("p", "safe-line", n.units.map(unitName).join(COMMA));
+        else if (n.kind === "all") add("p", "safe-line", T("الصلاحية بتغطي كل ملفات المشروع، فكل أجزاءه معرّضة.", "This permission covers every file in the project, so every part is exposed."));
         else add("p", "safe-line", n.label);
       }
       return;
     }
-    add("h2", "", "صلاحيات Claude" + (APPR.label ? " · " + APPR.label : ""));
-    if (APPR.demo) add("p", "demo", "موافقات تجريبية للمثال، مو موافقاتك الحقيقية.");
+    add("h2", "", T("صلاحيات Claude", "Claude's permissions") + (APPR.label ? " · " + APPR.label : ""));
+    if (APPR.demo) add("p", "demo", T("موافقات تجريبية للمثال، مو موافقاتك الحقيقية.", "Demo approvals for the example, not your real approvals."));
     if (APPR.note) add("p", "demo", APPR.note);
     add("p", "lead", APPR.summary.sentence);
     var selN = PV._node && PV.sel ? PV._node : null;
     if (selN && (selN.kind === "cat" || selN.kind === "more")) {
       add("h3", "", selN.kind === "cat" ? selN.label + " (" + selN.rules.length + ")" : selN.label);
-      add("p", "safe-line", "اضغط على صلاحية لتشوف شو تفرّع منها.");
+      add("p", "safe-line", T("اضغط على صلاحية لتشوف شو تفرّع منها.", "Click a permission to see what branches from it."));
       (selN.kind === "cat" ? selN.rules : selN.rules).forEach(function (r) { ruleRow(r, p); });
     } else {
-      add("h3", "", "الأخطر، اضغط وحدة لتشوف شو تفرّع منها");
+      add("h3", "", T("الأخطر، اضغط وحدة لتشوف شو تفرّع منها", "The most dangerous: click one to see what branches from it"));
       allRules().filter(function (r) { return r.kind === "allow"; }).sort(function (a, b) { return RISKS[b.risk] - RISKS[a.risk]; }).slice(0, 5).forEach(function (r) { ruleRow(r, p); });
     }
-    var det = add("details", "", null); add("summary", "", "كل الصلاحيات (" + allRules().length + ")", det);
+    var det = add("details", "", null); add("summary", "", T("كل الصلاحيات (", "All permissions (") + allRules().length + ")", det);
     allRules().forEach(function (r) { if (!r.isMode) { var w = add("div", "", null, det); w.style.marginTop = "6px"; ruleRow(r, w); } });
   }
   var typer = null;
@@ -947,7 +963,7 @@ body.hack .flow-edge { stroke: #39ff14; }
     setHidden($("map"), HACK); setHidden($("permMap"), !HACK);
     $("panel").hidden = HACK; $("cols").hidden = HACK; $("permPanel").hidden = !HACK; $("proof").hidden = HACK || !RES; $("strip").hidden = HACK;
     $("legendMap").hidden = HACK; $("legendHack").hidden = !HACK; $("hackPrompt").hidden = !HACK;
-    $("intro").textContent = HACK ? "هون كل شي سمحت لClaude فيه. المركز هو Claude، وحواليه الصلاحيات، واضغط أي وحدة لتشوف شو تفرّع منها وأي أجزاء من مشروعك بتوصلها." : MAP_INTRO;
+    $("intro").textContent = HACK ? T("هون كل شي سمحت لClaude فيه. المركز هو Claude، وحواليه الصلاحيات، واضغط أي وحدة لتشوف شو تفرّع منها وأي أجزاء من مشروعك بتوصلها.", "Everything you allowed Claude to do. Claude is at the center and its permissions are around it. Click any permission to see what branches from it and which parts of your project it reaches.") : MAP_INTRO;
     var st = $("stage"); st.classList.remove("boot"); void st.offsetWidth; if (HACK) st.classList.add("boot");
     if (HACK) { PV = { view: "top", rule: null, sel: null }; drawPerm(); renderPermPanel(); typePrompt("$ claude --permissions --reach"); } else { render(); fit(); }
     resetView();
@@ -957,7 +973,7 @@ body.hack .flow-edge { stroke: #39ff14; }
 
   $("renameBtn").addEventListener("click", function () {
     var d = DISP[state.sel], h = $("selName"), inp = document.createElement("input"), finished = false;
-    inp.type = "text"; inp.value = d.name; inp.maxLength = 40; inp.setAttribute("aria-label", "الاسم الجديد");
+    inp.type = "text"; inp.value = d.name; inp.maxLength = 40; inp.setAttribute("aria-label", T("الاسم الجديد", "New name"));
     h.textContent = ""; h.appendChild(inp); inp.focus(); inp.select();
     function done(save) {
       if (finished) return; finished = true;
@@ -1002,12 +1018,12 @@ body.hack .flow-edge { stroke: #39ff14; }
     setVb(svg, [p.x - w / 2, p.y - h / 2, w, h]);
   }
   $("bFull").addEventListener("click", function () {
-    FULL = !FULL; this.setAttribute("aria-pressed", String(FULL)); this.textContent = FULL ? "ملخّص" : "كل التفاصيل";
+    FULL = !FULL; this.setAttribute("aria-pressed", String(FULL)); this.textContent = FULL ? T("ملخّص", "Summary") : T("كل التفاصيل", "All details");
     if (!FULL && DISP[state.sel] && DISP[state.sel].kind === "fn") state.sel = DISP[state.sel].area;
     buildMap();
     if (HACK) { drawPerm(); renderPermPanel(); } else { render(); }
     resetView();
-    $("hint").textContent = FULL ? "كل دالة صارت مربع · كبّر بالعجلة واسحب" : "اسحب لتحريك الخريطة · عجلة الماوس للتقريب · اضغط على أي جزء"; $("hint").classList.remove("gone");
+    $("hint").textContent = FULL ? T("كل دالة صارت مربع · كبّر بالعجلة واسحب", "Every function is a box · zoom with the wheel and drag") : T("اسحب لتحريك الخريطة · عجلة الماوس للتقريب · اضغط على أي جزء", "Drag to move the map · mouse wheel to zoom · click any part"); $("hint").classList.remove("gone");
   });
   $("bIn").addEventListener("click", function () { zoomBy(curSvg(), 1.3); });
   $("bOut").addEventListener("click", function () { zoomBy(curSvg(), 1 / 1.3); });
@@ -1024,7 +1040,7 @@ body.hack .flow-edge { stroke: #39ff14; }
   // ---- proof section ---------------------------------------------------------------------------------
   (function proof() {
     var s = $("proof"); if (!RES) { s.hidden = true; return; }
-    var h = '<h2>كم هالخريطة دقيقة؟</h2>' + RES.html;
+    var h = '<h2>' + T("كم هالخريطة دقيقة؟", "How accurate is this map?") + '</h2>' + RES.html;
     s.innerHTML = h;
   })();
 

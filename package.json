@@ -1,6 +1,6 @@
 {
   "name": "impact-map",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "A map of what depends on what in your project, and of the permissions you gave Claude Code. One local HTML page, nothing uploaded.",
   "bin": { "impact-map": "impact.js" },
   "scripts": { "test": "node tests/selftest.js" },

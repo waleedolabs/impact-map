@@ -13,6 +13,7 @@ const REGION = /^\s*(?:\/\/+|\/\*+)\s*#?region\s+(.+?)\s*(?:\*\/)?\s*$/i;
 const AR = { storage: 'التخزين', store: 'المخزن', narrator: 'السارد', daily: 'اليومي', share: 'المشاركة', hud: 'لوحة المعلومات', route: 'التنقل', routes: 'المسارات', router: 'التوجيه', sheet: 'النافذة', end: 'النهاية', fx: 'المؤثرات', sound: 'الصوت', prompt: 'التعليمات للذكاء الاصطناعي', auth: 'الدخول', login: 'تسجيل الدخول', user: 'المستخدم', users: 'المستخدمين', db: 'قاعدة البيانات', database: 'قاعدة البيانات', api: 'الواجهة', util: 'أدوات مساعدة', utils: 'أدوات مساعدة', helpers: 'أدوات مساعدة', lib: 'المكتبة', config: 'الإعدادات', settings: 'الإعدادات', components: 'المكونات', component: 'المكوّن', pages: 'الصفحات', page: 'الصفحة', hooks: 'الخطّافات', server: 'الخادم', client: 'العميل', cart: 'السلة', payment: 'الدفع', payments: 'الدفع', checkout: 'إتمام الشراء', product: 'المنتج', products: 'المنتجات', order: 'الطلب', orders: 'الطلبات', mail: 'البريد', mailer: 'البريد', email: 'البريد', invoice: 'الفاتورة', invoices: 'الفواتير', admin: 'الإدارة', search: 'البحث', theme: 'المظهر', styles: 'التنسيق', header: 'الترويسة', footer: 'التذييل', nav: 'التنقل', layout: 'التخطيط', form: 'النموذج', forms: 'النماذج', modal: 'النافذة المنبثقة', button: 'الزر', list: 'القائمة', services: 'الخدمات', service: 'الخدمة', models: 'النماذج', model: 'النموذج', controllers: 'المتحكمات', controller: 'المتحكم', middleware: 'الوسيط', types: 'الأنواع', tests: 'الاختبارات', test: 'الاختبار', main: 'الرئيسي', index: 'الرئيسي', app: 'التطبيق', home: 'الرئيسية', dashboard: 'لوحة التحكم', profile: 'الملف الشخصي', accounts: 'الحسابات', account: 'الحساب', prices: 'الأسعار', parse: 'تحليل', parser: 'المحلّل', game: 'اللعبة', level: 'المرحلة', levels: 'المراحل', score: 'النتيجة', logging: 'السجل', log: 'السجل', cache: 'الذاكرة المؤقتة', session: 'الجلسة', notifications: 'الإشعارات', notify: 'الإشعارات', stats: 'الإحصائيات', top: 'الأعلى', bar: 'الشريط', turn: 'الدور', state: 'الحالة', ui: 'الواجهة', view: 'العرض', views: 'العروض', assets: 'الملفات', public: 'العام', scripts: 'السكربتات', docs: 'التوثيق' };
 const CAPW = { NET: 'بيتصل بالإنترنت', STO: 'بيحفظ على الجهاز', FS: 'بيكتب ملفات', KEY: 'بيستعمل مفتاحاً سرياً', AI: 'بيستعمل ذكاء اصطناعي', DB: 'بيكتب على قاعدة بيانات', CLIP: 'بينسخ ويشارك', SND: 'صوت واهتزاز', EXEC: 'بيشغّل أوامر', SRV: 'بيستقبل طلبات' };
 
+const CAPW_EN = { NET: 'Connects to the internet', STO: 'Saves on the device', FS: 'Writes files', KEY: 'Uses a secret key', AI: 'Uses AI', DB: 'Writes to a database', CLIP: 'Copies and shares', SND: 'Sound and vibration', EXEC: 'Runs commands', SRV: 'Receives requests' };
 const STOP = new Set(['has', 'get', 'set', 'init', 'main', 'run', 'handle', 'helper', 'util', 'callback', 'fn', 'cb', 'then', 'done', 'btn', 'el', 'on', 'off', 'add', 'new', 'update', 'render', 'default', 'index', 'app']);
 const GOOD_NAME = (n) => { const b = String(n).replace(/^.*\./, ''); return b.length >= 4 && !STOP.has(b.toLowerCase()); };
 // the words that most of a group's function names share (norm, parse, render...), weighted by how used the functions are
@@ -23,15 +24,17 @@ function commonWords(seg) {
   return Object.keys(c).sort((x, y) => c[y] - c[x] || (x < y ? -1 : 1)).slice(0, 2);
 }
 let degreeOfGlobal = () => 0;
-function humanize(s) {
+function humanize(s, lang) {
   let t = String(s).replace(/\(.*?\)/g, ' ').replace(/[_\-./]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[^\p{L}\p{N} ]+/gu, ' ').trim().replace(/\s+/g, ' ');
   if (!t) return String(s);
   const words = t.split(' ').slice(0, 3);
+  if (lang === 'en') { const j = words.join(' '); return j.charAt(0).toUpperCase() + j.slice(1); }
   return words.map((w) => AR[w.toLowerCase()] || w).join(' ');
 }
 
 function groupProject(graph, root, opts) {
   opts = opts || {};
+  const lang = opts.lang === 'en' ? 'en' : 'ar', COMMA = lang === 'en' ? ', ' : '، ';
   const nodes = graph.nodes, byId = new Map(nodes.map((n) => [n.id, n]));
   const lineCache = {};
   const linesOf = (f) => lineCache[f] || (lineCache[f] = (() => { try { return fs.readFileSync(path.join(root, f), 'utf8').split('\n'); } catch (e) { return null; } })());
@@ -160,17 +163,20 @@ function groupProject(graph, root, opts) {
   function describe(ids) {
     const fns = memberFns(ids).sort((a, b) => (degree.get(b.id) || 0) - (degree.get(a.id) || 0));
     const caps = new Set(); ids.forEach((i) => (byId.get(i).caps || []).forEach((c) => caps.add(c)));
-    const capText = Object.keys(CAPW).filter((k) => caps.has(k)).map((k) => CAPW[k]).slice(0, 3).join('، ');
-    return (fns.length ? fns.length + ' دالة، أهمها: ' + fns.slice(0, 3).map((f) => f.name.replace(/^.*\./, '') + '()').join('، ') + '.' : 'بيانات أو أجزاء بدون دوال.') + (capText ? ' ' + capText + '.' : '');
+    const CW = lang === 'en' ? CAPW_EN : CAPW;
+    const capText = Object.keys(CW).filter((k) => caps.has(k)).map((k) => CW[k]).slice(0, 3).join(COMMA);
+    const top = fns.slice(0, 3).map((f) => f.name.replace(/^.*\./, '') + '()').join(COMMA);
+    const head = fns.length ? (lang === 'en' ? fns.length + (fns.length === 1 ? ' function' : ' functions') + ', mainly: ' + top + '.' : fns.length + ' دالة، أهمها: ' + top + '.') : (lang === 'en' ? 'Data or parts without functions.' : 'بيانات أو أجزاء بدون دوال.');
+    return head + (capText ? ' ' + capText + '.' : '');
   }
   const areas = clusters.map((c, i) => {
     const lv = c.leaves;
     const names = (opts.names || {});
-    const leafOut = lv.map((l) => ({ id: l.id, name: (names[l.id] && names[l.id].name) || humanize(l.name), desc: (names[l.id] && names[l.id].desc) || describe(l.members), members: l.members }));
+    const leafOut = lv.map((l) => ({ id: l.id, name: (names[l.id] && names[l.id].name) || humanize(l.name, lang), desc: (names[l.id] && names[l.id].desc) || describe(l.members), members: l.members }));
     if (lv.length === 1) return { id: 'a' + (i + 1), name: leafOut[0].name, desc: leafOut[0].desc, leaves: [], members: lv[0].members, fixedId: lv[0].id };
     const main = lv.slice().sort((x, y) => y.members.length - x.members.length)[0];
-    const an = (names['a' + (i + 1)] && names['a' + (i + 1)].name) || humanize(main.name);
-    return { id: 'a' + (i + 1), name: an, desc: (names['a' + (i + 1)] && names['a' + (i + 1)].desc) || lv.map((l) => humanize(l.name)).join('، '), leaves: leafOut, members: [] };
+    const an = (names['a' + (i + 1)] && names['a' + (i + 1)].name) || humanize(main.name, lang);
+    return { id: 'a' + (i + 1), name: an, desc: (names['a' + (i + 1)] && names['a' + (i + 1)].desc) || lv.map((l) => humanize(l.name, lang)).join(COMMA), leaves: leafOut, members: [] };
   });
   // stable, readable order: biggest first
   areas.sort((a, b) => (b.members.length + b.leaves.reduce((s, l) => s + l.members.length, 0)) - (a.members.length + a.leaves.reduce((s, l) => s + l.members.length, 0)));

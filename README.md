@@ -1,165 +1,137 @@
-# خريطة الأثر · Impact Map
+# Impact Map · خريطة الأثر
+
+**English** · **[العربية](README.ar.md)**
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue) ![Node 18+](https://img.shields.io/badge/node-18%2B-green) ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-7aa2ff) ![Runs locally](https://img.shields.io/badge/runs-locally%2C%20nothing%20uploaded-lightgrey)
 
-<p align="center"><img src="docs/map.png" alt="خريطة المشروع: اختر جزءاً وشوف شو رح يتأثر لو عدّلته أو حذفته" width="900"></p>
+<p align="center"><img src="docs/map.png" alt="Project map: pick a part and see what is affected if you edit or delete it" width="900"></p>
 
-*مشروع تجريبي صغير. الأزرق: الجزء المختار. البرتقالي: يتأثر مباشرة. الأصفر المتقطع: قد يتأثر. الأخضر: سليم.*
+*A small demo project. Blue: the part you picked. Orange: directly affected. Dashed yellow: may be affected. Green: fine. The page also comes in Arabic (`--lang ar`).*
 
-<p align="center"><img src="docs/demo.gif" alt="عرض سريع: اختيار جزء، لو عدّلته ولو حذفته، كل التفاصيل، ومؤشر الثقة" width="720"></p>
+<p align="center"><img src="docs/demo.gif" alt="Quick demo: pick a part, if you edit it and if you delete it, all details, and the confidence level" width="720"></p>
 
-**شو هي؟** أداة بتقرأ كود مشروعك (JavaScript / TypeScript / React / HTML) وبتطلّعلك صفحة وحدة فيها خريطتين:
+**What is it?** A tool that reads your JavaScript / TypeScript / React / HTML project and builds one page with two maps:
 
-1. **خريطة المشروع:** أجزاء مشروعك وكيف مرتبطة ببعض. اضغط على أي جزء، وتحت الخريطة بتشوف جنب بعض **«لو عدّلته»** و**«لو حذفته»**: شو رح يتأثر **قبل** ما تلمس شي. زر **«كل التفاصيل»** بيعرض كل دالة بالمشروع كمربع لحالها.
-2. **خريطة الصلاحيات:** (بستايل الهاكر) الصلاحيات الدائمة اللي سمحت فيها لـ Claude Code، وشو تفرّع عن كل وحدة، وأي أجزاء من مشروعك بتتأثر.
+1. **Project map:** your project's parts and how they connect. Click any part and, under the map, see side by side **"If you edit it"** and **"If you delete it"**: what will be affected **before** you touch anything. The **All details** button shows every function as its own box.
+2. **Permissions map** (hacker style): the standing permissions you gave Claude Code, what branches from each, and which parts of your project they reach.
 
-كل شي بيشتغل على جهازك. ما بيتصل بالإنترنت وما بيرفع شي لأي مكان.
+Everything runs on your computer. It does not connect to the internet and uploads nothing.
 
-## خلّي Claude يستعين بالخريطة كل مرة
+## Make Claude use the map on every change
 
-بدل ما تذكّره بكل خطوة، قله مرة وحدة بأي مشروع:
+Instead of reminding it at every step, say this once in any project:
 
-> **«استعن بخريطة الأثر في كل خطوة: قبل ما تعدّل أو تحذف شي شوف مين بيعتمد عليه وقلي مستوى الثقة، وبعد ما تخلّص حدّث الخريطة.»**
+> **"Use the impact map at every step: before you edit or delete anything, check who depends on it and tell me the confidence level, and refresh the map when you finish."**
 
-أو شغّل **`/impact-map-keep`**: بيضيف قاعدة دائمة لملف `CLAUDE.md` بمشروعك (بتشوفها وبتقدر تشيلها بـ `/impact-map-keep off`)، فبتنطبق على كل الجلسات الجاية بدون ما تعيدها.
+Or run **`/impact-map-keep`**: it adds a standing rule to your project's `CLAUDE.md` (you can see it, and remove it with `/impact-map-keep off`), so it applies to every future session without you repeating it.
 
-شو بيصير بعدها:
+What happens then:
 
-- **قبل أي تعديل أو حذف** بيسأل الخريطة، وبيقلك بجملتين مين بيعتمد على اللي رح يلمسه، ومستوى الثقة.
-- **إذا في شي بيعتمد عليه** بيحدّثه بنفس التعديل أو بينبّهك، وما بيحذف شي مرتبط (أو ثقته متوسطة/منخفضة) قبل ما توافق.
-- **بعد ما يخلّص** بيعيد بناء الخريطة فبتبقى مطابقة للكود، وبيشغّل الاختبارات.
+- **Before any edit or delete** it asks the map and tells you in two sentences who depends on what it is about to touch, and the confidence level.
+- **If something depends on it** it updates that in the same change or warns you, and it will not delete anything that others depend on (or with medium/low confidence) before you agree.
+- **When it finishes** it rebuilds the map so it matches the code, and runs the tests.
 
-الخريطة بتساعده يقرر، وما بتغني عن تشغيل الكود. وبهالوضع ما بنحكم عليها بالتجربة الحقيقية بعد (ما انجرّب بجلسة Claude Code حية)؛ هي تعليمات بتنقرا من الإضافة وبتتبع Claude لها.
+The map helps it decide; it does not replace running the code. This mode is instructions that Claude follows from the plugin; it has not been tested in a live Claude Code session yet.
 
-## الاستخدام داخل Claude Code (الأسهل)
+## Use it inside Claude Code (easiest)
 
-ركّبها كإضافة مرة وحدة، وبعدها احكي مع Claude بشكل عادي:
+Install it once as a plugin, then just talk to Claude:
 
 ```
 /plugin marketplace add waleedolabs/impact-map
 /plugin install impact-map@impact-map
 ```
 
-(إذا المستودع خاص، لازم يكون حسابك على GitHub مسجّل دخول بجهازك. أو نزّله وضيفه من مجلد محلي:
-`/plugin marketplace add المسار-المحلي`.)
+(Or from a terminal: `claude plugin marketplace add waleedolabs/impact-map` and `claude plugin install impact-map@impact-map`.)
 
-بعدها:
+Then:
 
-- اكتب **`/impact-map`** ← بيبني الصفحة ويقلك وين الملف وكيف تفتحه.
-- أو احكي: **«شو بيتأثر لو حذفت ملف accounts.js؟»** ← Claude بيقرأ الخريطة ويجاوبك بكلام بسيط.
-- أو: **«شو الصلاحيات اللي سمحتلك فيها بهالمشروع؟»**
+- Type **`/impact-map`**: it builds the page and tells you where the file is and how to open it.
+- Or ask: **"What happens if I delete accounts.js?"** Claude reads the map and answers in plain words, including the confidence level.
+- Or: **"What permissions did I give you in this project?"**
 
-الصفحة بتنحفظ بـ`.impact/` جوا مشروعك (أضفه لـ`.gitignore`). Claude بيقرأ بس، وما بيعدّل كودك.
+The page is saved in `.impact/` inside your project (add it to `.gitignore`). Claude only reads; it does not change your code. Claude passes `--lang` to match the language you talk to it in.
 
-## التشغيل بدون Claude (سطر أوامر)
+## Run it without Claude (command line)
 
-بدك Node.js 18 أو أحدث. ما في شي تنزّله.
+You need Node.js 18 or newer. There is nothing to download.
 
 ```
-node impact.js مسار-مجلد-مشروعك
+node impact.js path-to-your-project
 ```
 
-بيطلع ملف `impact-map.html`، افتحه بأي متصفح. خيارات:
+It writes `impact-map.html`; open it in any browser. Options:
 
-| الخيار | شو بيعمل |
+| Option | What it does |
 |---|---|
-| `--out ملف.html` | مكان الملف الناتج |
-| `--name "اسم"` | الاسم اللي بيظهر بالصفحة |
-| `--names names.json` | أسماء الأجزاء اللي بدك ياها (بدل التلقائية) |
-| `--user-settings ملف.json` | نسخة من إعدادات Claude Code الشخصية (لازم تعطيني نسخة بنفسك) |
-| `--json graph.json` | حفظ الخريطة الخام |
+| `--out file.html` | where to write the page |
+| `--lang ar` / `en` / `auto` | language of the page and of what the tool prints (default `auto`: Arabic on an Arabic computer, otherwise English) |
+| `--name "Name"` | the name shown on the page |
+| `--names names.json` | your own names for the parts (instead of the automatic ones) |
+| `--user-settings file.json` | a copy of your personal Claude Code settings (you have to give it a copy yourself) |
+| `--json graph.json` | also save the raw map |
 
-بالصفحة نفسها:
+In the page itself:
 
-- **«كل التفاصيل» / «ملخّص»**: كل دالة كمربع، أو الأجزاء بس.
-- **عجلة الماوس** للتقريب، و**السحب** لتحريك الخريطة، و◎ لترجيعها.
-- زر **الوضع الفاتح / الداكن**.
-- **«غيّر الاسم»** لأي جزء، والاسم بينحفظ بمتصفحك.
+- **All details / Summary:** every function as a box, or the parts only.
+- **Mouse wheel** to zoom, **drag** to move the map, ◎ to reset.
+- A **light / dark** button.
+- **Rename** on any part; the name is saved in your browser.
 
-## التحديث
+## Updating
 
-لما تنزل نسخة جديدة:
+When a new version is out:
 
 ```
 claude plugin marketplace update impact-map
 claude plugin update impact-map@impact-map
 ```
 
-وبعدها افتح **جلسة جديدة** بـ Claude Code (الإضافة بتنقرا لما تبلّش الجلسة).
+Then start a **new session** in Claude Code (plugins are read when a session starts).
 
-## مؤشر الثقة
+## Confidence level
 
-جنب كل نتيجة بتشوف **الثقة: عالية / متوسطة / منخفضة**، ومعها السبب بكلام بسيط. المؤشر ما بيغيّر النتيجة، بس بيقلك **إيمتى تصدّق الخريطة وإيمتى تتأكد بنفسك**:
+Next to every result you see **Confidence: high / medium / low**, with the reason in plain words. It does not change the result; it tells you **when to trust the map and when to check yourself**:
 
-- **عالية:** كل الروابط لهالجزء مكتوبة صراحة بالكود (استدعاء أو استيراد مباشر).
-- **متوسطة:** في شي حواليه الخريطة ما بتقدر تتبعه بالكامل، مثلاً ملف بيذكر ملفه أو مجلده بالاسم (بيقراه كبيانات أو بيشغّله)، أو بيوصل لدواله بأسماء بتنحسب وقت التشغيل (`obj[name]`)، أو بيتمرّر كدالة رد.
-- **منخفضة:** الخريطة بتقول «ما حدا بيستعمله»، بس في كود بنفس المكان بيحمّل ملفات بأسماء ما بتنعرف قبل التشغيل. هون لا تحذف قبل ما تتأكد.
+- **High:** every link to this part is written out in the code (direct calls or imports).
+- **Medium:** something around it that the map cannot fully follow: for example a file that names this file or its folder (reads it as data, or runs it), reaches its functions by names worked out at run time (`obj[name]`), or it is passed around as a callback.
+- **Low:** the map says "nothing uses it", but code in the same place loads files by names that are not known before running. Do not delete before you check.
 
-جرّبناه على الحالات اللي الخريطة فعلياً غلطت فيها: التسع ملفات اللي فاتت الخريطة بكود هالأداة طلعت كلها «متوسطة» مع السبب الصح. وبمشروع express، الملف الوحيد اللي بيتحمّل بـ `require(path)` (ما حدا بيستورده صراحة) طلع «منخفضة».
+We tried it on the cases where the map really was wrong: the 9 files it missed in this tool's own code were all marked "medium" with the right reason. In the express project, the one file loaded through `require(path)` (nobody imports it explicitly) was marked "low".
 
-## قد إيش هي دقيقة؟ (أرقام حقيقية، مع حدودها)
+## How accurate is it? (real numbers, with their limits)
 
-- **الروابط بين الملفات:** على مشروع صغير بـ14 ملف، حذفنا كل ملف فعلياً وشغّلنا الباقي: انكسر 49 ملف، والخريطة ما فاتها ولا واحد. وعلى كود هالأداة نفسها (36 ملف): انكسر 90 ملف، والخريطة توقّعت 81 (90%). **التسعة اللي فاتتها كلها نفس الحالة:** ملف اختبار بيقرا مشروعاً تانياً **كبيانات** مو ككود، وهالنوع من الاعتماد ما بيبيّن بالخريطة. (بيقيس الكسر عند تحميل الملف بس؛ `tests/file_level_check.js` بيعيد القياس على أي مشروع.)
-- **الروابط بين الدوال:** على لعبة حقيقية (112 دالة)، حذفنا 90 دالة وشغّلنا اللعبة بعد كل حذف. 62 حذف طلّع خطأ واضح، وكل أماكن الخطأ (77) كانت بدوال الخريطة متوقعتها. **28 حذف ما طلّع أي خطأ** (الخطأ بينبلع بصمت)، والخريطة بتبقى بتعرض مين بيعتمد عليها. طريقة العدّ انعدّلت بعد ما شفنا النتائج، فالرقم استرشادي.
-- **TypeScript وReact:** على مشروع React/TypeScript حقيقي (11 دالة، 6 روابط)، الروابط طابقت الاستيراد الفعلي (راجعناها بالقراءة).
-- **التقسيم التلقائي لأجزاء:** بيطابق تقسيماً يدوياً كتبناه للعبة بنسبة 0.63 من 1 (التقسيم حسب الملفات بس بيعطي 0.23). **الأسماء التلقائية بتطلع أحياناً رديئة**، وهاد سبب وجود زر «غيّر الاسم».
-- **تصنيف خطر الصلاحيات:** على 70 صلاحية كتبها وكيل مستقل وحكم عليها وكيلين مستقلين، الأداة لقطت 33 من 39 صلاحية خطرة بأول مرة، و37 بعد تصحيحات عامة (على نفس الأمثلة، فمو اختبار مستقل).
+- **Links between files:** on a small project of 14 files we deleted each file for real and ran the rest: 49 files broke and the map missed none. On this tool's own code (36 files): 90 files broke and the map predicted 81 (90%). **All 9 it missed are the same case:** a test that reads another project as *data*, not as code; that kind of dependency does not show in the map. (It measures breakage at load time only; `tests/file_level_check.js` repeats the measurement on any project.)
+- **Links between functions:** on a real game (112 functions) we deleted 90 functions and ran the game after each deletion. 62 deletions gave a clear error, and all the error places (77) were functions the map had predicted. **28 deletions gave no error at all** (the error is swallowed silently), and the map still shows who depends on them. The counting method was adjusted after we saw the results, so treat the number as a guide.
+- **TypeScript and React:** on a real React/TypeScript project (11 functions, 6 links) the links matched the actual imports (checked by reading).
+- **Automatic grouping into parts:** it matches a hand-written grouping of the game at 0.63 out of 1 (grouping by files alone gives 0.23). **Automatic names are sometimes poor**, which is why there is a Rename button.
+- **Permission risk rating:** on 70 permissions written by an independent agent and judged by two independent agents, the tool caught 33 of 39 dangerous permissions at first, and 37 after general fixes (on the same examples, so it is not an independent test).
 
-## القيود (اقرأها)
+## Limits (please read)
 
-- **اللغات:** JavaScript وTypeScript (بشرط حزمة `typescript` بالمشروع) وReact وHTML. Python وJava وKotlin وغيرها لسا لا.
-- **الخريطة تقدير مبني على قراءة الكود، مو ضمان.** الكود اللي بيتحمّل بطريقة ديناميكية أو بأسماء متغيرة ممكن تفوتنا روابطه، والصفحة بتنبّه لما بتلاحظ هيك.
-- **الصلاحيات:** الأداة بتشوف **الصلاحيات الدائمة** المحفوظة بملفات إعدادات Claude Code بس (`.claude/settings.json` و`settings.local.json`). الموافقات اللي بتضغط عليها «نعم» مرة وحدة **ما بتنحفظ**، فما بنشوفها. وملف إعداداتك الشخصي العام محمي من Claude نفسه: انسخه بإيدك وأعطيه لـ `--user-settings` إذا بدك.
-- **ما انجرّب مع ناس حقيقيين بعد.** لا نعرف إذا الصفحة بتخلّي الشخص العادي يفهم أكتر.
-- **الاعتماد عن طريق البيانات** (ملف بيقرا ملف تاني كنص أو JSON، أو بيشغّله كأمر) ما بيبيّن.
-- **«ما في شي بيعتمد عليه» ما بتعني «آمن تحذفه».** شغّل اختباراتك دايماً.
-- **الحجم:** جرّبناها على مشروع بـ1200 ملف و4800 دالة: الخريطة بتطلع بحوالي 5 ثواني، و«كل التفاصيل» بتفتح بأقل من ثانيتين. أكتر من 1500 ملف بتنقطع، والصفحة بتبيّن هالشي.
+- **Languages:** JavaScript, TypeScript (needs the `typescript` package in the project), React and HTML. Python, Java, Kotlin and others: not yet.
+- **The map is an estimate from reading the code, not a guarantee.** Code loaded dynamically or by changing names may be missed; the page warns you when it notices.
+- **Dependencies through data** (a file reading another file as text or JSON, or running it as a command) are not shown as links; the confidence level flags them.
+- **"Nothing depends on it" does not mean "safe to delete".** Always run your tests.
+- **Permissions:** the tool sees only the **standing permissions** saved in Claude Code settings files (`.claude/settings.json` and `settings.local.json`). One-time "Yes" approvals are **not saved**, so we cannot see them. Your personal global settings file is protected from Claude itself: copy it yourself and give it to `--user-settings` if you want it included.
+- **Size:** we tried a project with 1200 files and 4800 functions: the map is built in about 5 seconds and "All details" opens in under 2. Over 1500 files it is cut, and the page says so.
+- **Not tested with real people yet.** We do not know whether the page helps an ordinary person understand more.
 
-## تجريبي: الحارس
+## Experimental: the guard
 
-`hook/permission_hook.js` سكربت بيصنّف أوامر Claude Code قبل تنفيذها (آمن / بحذر / خطر) وبيسأل بجملة بسيطة. **تجريبي**: ما اتجرّب جوا جلسة Claude Code حقيقية، وبينشر منه تصنيف الصلاحيات المستعمل هون. التفاصيل والأرقام بـ`research/`.
+`hook/permission_hook.js` is a script that classifies Claude Code commands before they run (safe / careful / dangerous) and asks with a simple sentence. **Experimental:** it has not been tested inside a live Claude Code session. Set `IMPACT_LANG=en` for English reasons. Details and numbers are in `research/`.
 
-## مساهمة وبلاغات
+## Contributing and reports
 
-ملاحظاتك أهم شي بهالمرحلة، خصوصاً: **مشروع الأداة غلطت فيه** (قالت «ما حدا بيعتمد عليه» وانكسر شي). افتح Issue وحط اسم الملف وشو انكسر. التفاصيل بـ `CONTRIBUTING.md`.
+Your feedback matters most at this stage, especially: **the tool was wrong** (it said "nothing depends on it" and something broke). Open an issue with the file name and what broke. Details in `CONTRIBUTING.md`.
 
-## بالتطوير
+## Development
 
 ```
 node tests/selftest.js
 ```
 
-المحلّلات الجاهزة (acorn وacorn-jsx، ترخيص MIT) موجودة بمجلد `vendor/` عشان ما تحتاج تنزّل شي.
-
----
-
-## English summary
-
-Impact Map reads a JavaScript / TypeScript / React / HTML project and builds one self-contained HTML page with two maps:
-(1) a map of the project's parts and what depends on what, with an edit / delete preview before you touch anything;
-(2) a map of the standing permissions you gave Claude Code, what branches from each, and which parts of your project they reach.
-Everything runs locally. No network, nothing uploaded.
-
-Inside Claude Code (as a plugin): `/plugin marketplace add waleedolabs/impact-map`, then `/plugin install impact-map@impact-map`.
-To make Claude use the map on every change, say once: "use the impact map at every step: before you edit or delete anything, check who depends on it and tell me the confidence, and refresh the map when you finish", or run `/impact-map-keep` (adds a standing rule to the project's `CLAUDE.md`; `/impact-map-keep off` removes it). Claude then checks the map before risky edits, will not delete anything others depend on (or with medium/low confidence) without your confirmation, and rebuilds the map afterwards. This mode is instructions that Claude follows; it has not been tested in a live Claude Code session yet.
-
-Then run `/impact-map`, or just ask "what breaks if I delete accounts.js?" and Claude answers from the map.
-Update later with `claude plugin marketplace update impact-map` and `claude plugin update impact-map@impact-map`, then start a new session.
-
-Every result carries a confidence level (high / medium / low) with plain reasons: it flags what the map cannot follow around that part (files named in the code and read as data or run, `obj[name]` access, callbacks, code loaded by a run-time name). On real misses it flagged all 9 files the map missed in this tool's own code, and the one express file loaded through `require(path)`.
-
-In the page: pick any part and see "if you edit it" and "if you delete it" side by side under the map; "all details" shows every function as its own box; zoom with the wheel, drag to move, light/dark toggle.
-
-Without Claude:
-
-```
-node impact.js path/to/your/project      # writes impact-map.html
-```
-
-Honest limits: JS/TS only; the map is an estimate from reading the code, not a guarantee; only *standing* permissions saved in Claude Code settings files are visible (one-time "Yes" clicks are not stored);
-dependencies through data (a file reading another as text/JSON, or running it as a command) are not seen; "nothing depends on it" does not mean "safe to delete";
-automatic part names are often rough (rename them in the page); not tested with real users yet.
-Measured: deleting each file of this tool's own code for real broke 90 files, the map predicted 81 (all 9 misses were a test reading a sample project as data). Tested up to 1200 files / 4800 functions (about 5 s to build). Numbers above are from our own tests and were partly tuned on the same data.
+The bundled parsers (acorn and acorn-jsx, MIT) are in `vendor/`, so there is nothing to download.
 
 ## License
 

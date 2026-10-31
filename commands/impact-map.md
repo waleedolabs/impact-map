@@ -4,5 +4,5 @@ argument-hint: "[project folder]"
 ---
 
 Use the `impact-map` skill to build the impact map for the project folder "$ARGUMENTS" (if empty, the current directory).
-Follow section 1 of the skill: run the tool, then tell me where the HTML file is, how to open it, the counts, and every note the tool printed.
+Follow section 1 of the skill (pass `--lang` to match the language I write to you in): run the tool, then tell me where the HTML file is, how to open it, the counts, and every note the tool printed.
 Keep it short and in plain words.

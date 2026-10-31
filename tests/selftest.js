@@ -22,4 +22,12 @@ const { confidenceOf } = require('../analyzer/confidence.js');
 assert.ok(g.dataRefs.some((d) => d.from === 'server.js' && d.target === 'routes'), 'a folder named in the code is noticed');
 assert.strictEqual(confidenceOf(g, g.nodes.filter((n) => n.file === 'accounts.js' && n.kind !== 'top').map((n) => n.id)).level, 'high', 'plain imports and calls: high confidence');
 assert.ok(out.html.includes('function confidenceOf') && !out.html.includes('/*CONFJS*/'), 'confidence code is in the page');
-console.log('ok: map, grouping, approvals, confidence and page all work on the bundled project');
+// English: the page, the grouping text and the permission texts have no Arabic letters, and the risk levels are the same as in Arabic
+const AR_LETTERS = /[\u0600-\u06FF]/;
+const en = build(root, { name: 'demo', lang: 'en' });
+assert.ok(en.html.includes('<html lang="en" dir="ltr">'), 'English page is left-to-right');
+assert.ok(!AR_LETTERS.test(JSON.stringify(en.grouped.areas)) && !AR_LETTERS.test(JSON.stringify(en.project.warnings)), 'English grouping and notes have no Arabic');
+const aEn = analyze({ project: path.join(__dirname, 'fixtures', 'settings-demo'), lang: 'en' });
+assert.ok(!AR_LETTERS.test(JSON.stringify(aEn.rules.map((x) => [x.plain, x.worst])) + aEn.summary.sentence), 'English permission texts have no Arabic');
+assert.deepStrictEqual(aEn.rules.map((x) => x.risk), a.rules.map((x) => x.risk), 'risk levels do not depend on the language');
+console.log('ok: map, grouping, approvals, confidence, English and page all work on the bundled project');

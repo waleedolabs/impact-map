@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)", "Bash(git push:*)", "Bash(npm run build:*)", "Bash(npm:*)", "Bash(python3:*)",
+      "Bash(rm:*)", "Bash(curl:*)", "Bash(ls:*)", "Bash(cat:*)", "Bash(find:*)",
+      "Edit", "WebFetch(domain:github.com)", "Read(~/.ssh/**)", "mcp__github",
+      "mcp__slack__list_channels", "Edit(//**)"
+    ],
+    "deny": ["Read(.env)"],
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": ["C:/Users/pc/Documents"]
+  }
+}

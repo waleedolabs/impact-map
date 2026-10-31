@@ -7,6 +7,7 @@
 //   --names names.json        your own names for parts: { "a1": {"name": "...", "desc": "..."} }
 //   --user-settings <file>    also read your personal Claude Code settings.json (you have to point to a copy of it yourself)
 //   --approvals <file.json>   use ready-made approvals data (for demos)
+//   --lang ar|en|auto         language of the page and of what this tool prints (auto: Arabic on an Arabic computer, else English)
 //   --json graph.json         also save the raw map
 const fs = require('fs');
 const path = require('path');
@@ -26,37 +27,73 @@ function otherLanguages(root) {
   return c;
 }
 
+// language of the page and of what the tool prints: --lang ar|en|auto (auto: Arabic if the computer's language is Arabic, otherwise English)
+function pickLang(v) {
+  if (v === 'ar' || v === 'en') return v;
+  const env = String(process.env.IMPACT_LANG || process.env.LC_ALL || process.env.LANG || '');
+  let loc = ''; try { loc = Intl.DateTimeFormat().resolvedOptions().locale || ''; } catch (e) { /* keep empty */ }
+  return /^ar/i.test(env) || (!env && /^ar/i.test(loc)) ? 'ar' : 'en';
+}
+const MSG = {
+  ar: {
+    nothing: 'ما لقيت دوال JavaScript أو TypeScript بهالمجلد.', foundOther: (l) => ' لقيت ملفات ' + l + '، وهالأنواع لسا مو مدعومة.', checkFolder: ' تأكد إنك أعطيت مجلد المشروع نفسه.',
+    ts: (n) => 'ما انقرأ ' + n + ' ملف TypeScript لأنو حزمة typescript مو موجودة (شغّل npm install بالمشروع وأعد التشغيل)',
+    skipped: (l, more) => 'ملفات انتخطت: ' + l + (more ? ' وغيرها' : ''), dyn: (l) => 'بعض الملفات بتحمّل كود بطريقة ما بنقدر نقراها (' + l + ')، فالروابط منها ناقصة',
+    langs: (l) => 'لغات ما انقرأت: ' + l, estimate: 'الخريطة تقدير مبني على قراءة الكود، مو ضمان', and: ' و', comma: '، ',
+    noteFound: 'هاي الصلاحيات الدائمة المحفوظة بملفات إعدادات Claude Code بس. الموافقات اللي بتضغط عليها «نعم» مرة وحدة ما بتنحفظ، فما بقدر أشوفها هون.',
+    noteNone: 'ما لقيت ملف إعدادات Claude Code بهالمشروع (.claude/settings.local.json)، يعني ما في صلاحيات دائمة محفوظة. الموافقات اللي بتضغط عليها «نعم» مرة وحدة ما بتنحفظ.',
+    noneSentence: 'ما في صلاحيات دائمة محفوظة بهالمشروع.', missingDir: 'المجلد غير موجود: ', done: 'تم. الصفحة: ',
+    counts: (s) => '  ' + s.files + ' ملف، ' + s.functions + ' دالة، ' + s.edges + ' رابط، ' + s.areas + ' مناطق.', note: '  ملاحظة: ', open: '  افتح الملف بأي متصفح.',
+  },
+  en: {
+    nothing: 'No JavaScript or TypeScript functions found in this folder.', foundOther: (l) => ' Found ' + l + ', and those languages are not supported yet.', checkFolder: ' Make sure you gave the project folder itself.',
+    ts: (n) => n + ' TypeScript file(s) were not read because the typescript package is not installed (run npm install in the project and run this again)',
+    skipped: (l, more) => 'Skipped files: ' + l + (more ? ' and others' : ''), dyn: (l) => 'Some files load code in a way we cannot read (' + l + '), so links from them are missing',
+    langs: (l) => 'Languages not read: ' + l, estimate: 'The map is an estimate from reading the code, not a guarantee', and: ' and ', comma: ', ',
+    noteFound: 'These are the standing permissions saved in Claude Code settings files only. Approvals you click "Yes" on once are not saved, so they cannot be shown here.',
+    noteNone: 'No Claude Code settings file found in this project (.claude/settings.local.json), so there are no standing permissions saved. Approvals you click "Yes" on once are not saved.',
+    noneSentence: 'No standing permissions are saved for this project.', missingDir: 'Folder does not exist: ', done: 'Done. Page: ',
+    counts: (s) => '  ' + s.files + ' files, ' + s.functions + ' functions, ' + s.edges + ' links, ' + s.areas + ' areas.', note: '  Note: ', open: '  Open the file in any browser.',
+  },
+};
+
 function build(root, opt) {
+  const lang = pickLang(opt.lang), M = MSG[lang];
   const name = opt.name || path.basename(root);
   const graph = analyzeProject(root);
   if (!graph.stats.functions) {
     const other = otherLanguages(root), langs = Object.keys(other);
-    throw new Error('ما لقيت دوال JavaScript أو TypeScript بهالمجلد.' + (langs.length ? ' لقيت ملفات ' + langs.map((l) => l + '×' + other[l]).join(' و') + '، وهالأنواع لسا مو مدعومة.' : ' تأكد إنك أعطيت مجلد المشروع نفسه.'));
+    throw new Error(M.nothing + (langs.length ? M.foundOther(langs.map((l) => l + '×' + other[l]).join(M.and)) : M.checkFolder));
   }
   const names = opt.names ? JSON.parse(fs.readFileSync(opt.names, 'utf8')) : {};
-  const grouped = groupProject(graph, root, { names });
+  const grouped = groupProject(graph, root, { names, lang });
   const warnings = [];
-  if (graph.stats.skippedTypeScript) warnings.push('ما انقرأ ' + graph.stats.skippedTypeScript + ' ملف TypeScript لأنو حزمة typescript مو موجودة (شغّل npm install بالمشروع وأعد التشغيل)');
+  if (graph.stats.skippedTypeScript) warnings.push(M.ts(graph.stats.skippedTypeScript));
   const otherSkipped = graph.skipped.filter((s) => !/TypeScript file/.test(s.why));
-  if (otherSkipped.length) warnings.push('ملفات انتخطت: ' + otherSkipped.slice(0, 3).map((s) => s.file + ' (' + s.why + ')').join('، ') + (otherSkipped.length > 3 ? ' وغيرها' : ''));
+  if (otherSkipped.length) warnings.push(M.skipped(otherSkipped.slice(0, 3).map((s) => s.file + ' (' + s.why + ')').join(M.comma), otherSkipped.length > 3));
   const dyn = graph.problems.filter((p) => /variable name/.test(p.note));
-  if (dyn.length) warnings.push('بعض الملفات بتحمّل كود بطريقة ما بنقدر نقراها (' + dyn.slice(0, 3).map((p) => p.file).join('، ') + ')، فالروابط منها ناقصة');
+  if (dyn.length) warnings.push(M.dyn(dyn.slice(0, 3).map((p) => p.file).join(M.comma)));
   const other = otherLanguages(root);
-  if (Object.keys(other).length) warnings.push('لغات ما انقرأت: ' + Object.keys(other).map((l) => l + '×' + other[l]).join(' و'));
-  warnings.push('الخريطة تقدير مبني على قراءة الكود، مو ضمان');
+  if (Object.keys(other).length) warnings.push(M.langs(Object.keys(other).map((l) => l + '×' + other[l]).join(M.and)));
+  warnings.push(M.estimate);
 
   // permissions: standing permissions saved by Claude Code for this project (and your personal file, only if you point to it)
   let appr;
-  if (opt.approvals) appr = JSON.parse(fs.readFileSync(opt.approvals, 'utf8'));
+  if (opt.approvals) {   // ready-made demo data; for English a sibling "<name>.en.json" is used when it exists
+    let f = opt.approvals; const en = f.replace(/\.json$/, '.en.json');
+    if (lang === 'en' && en !== f && fs.existsSync(en)) f = en;
+    appr = JSON.parse(fs.readFileSync(f, 'utf8'));
+  }
   else {
-    const a = analyzeApprovals({ project: root, user: opt['user-settings'] });
-    if (a.files.length) { delete a.project; delete a.files; appr = Object.assign(a, { demo: false, label: name, note: 'هاي الصلاحيات الدائمة المحفوظة بملفات إعدادات Claude Code بس. الموافقات اللي بتضغط عليها «نعم» مرة وحدة ما بتنحفظ، فما بقدر أشوفها هون.' }); }
-    else appr = { demo: false, label: name, note: 'ما لقيت ملف إعدادات Claude Code بهالمشروع (.claude/settings.local.json)، يعني ما في صلاحيات دائمة محفوظة. الموافقات اللي بتضغط عليها «نعم» مرة وحدة ما بتنحفظ.', rules: [], mode: null, dirs: [], hooks: [], summary: { capKeys: [], allowed: 0, denied: 0, byRisk: { red: 0, yellow: 0, green: 0 }, sentence: 'ما في صلاحيات دائمة محفوظة بهالمشروع.' } };
+    const a = analyzeApprovals({ project: root, user: opt['user-settings'], lang });
+    if (a.files.length) { delete a.project; delete a.files; appr = Object.assign(a, { demo: false, label: name, note: M.noteFound }); }
+    else appr = { demo: false, label: name, note: M.noteNone, rules: [], mode: null, dirs: [], hooks: [], summary: { capKeys: [], allowed: 0, denied: 0, byRisk: { red: 0, yellow: 0, green: 0 }, sentence: M.noneSentence } };
   }
   const slim = { nodes: graph.nodes.map((n) => ({ id: n.id, name: n.name, file: n.file, kind: n.kind, start: n.start, parent: n.parent, caps: n.caps })), edges: graph.edges.map((e) => ({ from: e.from, to: e.to, how: e.how })),
     facts: graph.facts, dataRefs: graph.dataRefs, pkg: graph.pkg, problems: graph.problems.map((p) => ({ file: p.file })) };
-  const project = { name, stats: { files: graph.stats.files, functions: graph.stats.functions, edges: graph.stats.edges, areas: grouped.stats.areas, parts: grouped.stats.parts }, warnings };
+  const project = { name, stats: { files: graph.stats.files, functions: graph.stats.functions, edges: graph.stats.edges, areas: grouped.stats.areas, parts: grouped.stats.parts }, warnings, lang };
   let html = fs.readFileSync(path.join(__dirname, 'map', 'template.html'), 'utf8');
+  if (lang === 'en') html = html.replace('<html lang="ar" dir="rtl">', '<html lang="en" dir="ltr">');
   const put = (k, v) => { html = html.split('/*' + k + '*/null').join(JSON.stringify(v).replace(/</g, '\\u003c')); };
   html = html.split('/*CONFJS*/').join(fs.readFileSync(path.join(__dirname, 'analyzer', 'confidence.js'), 'utf8').replace(/<\/script/gi, '<\\/script'));
   put('GRAPH', slim); put('AREAS', grouped.areas); put('RESULTS', null); put('APPROVALS', appr); put('PROJECT', project);
@@ -67,17 +104,18 @@ module.exports = { build };
 
 if (require.main === module) {
   const opt = parseArgs(process.argv.slice(2));
-  if (!opt._[0] || opt.help) { console.log('usage: node impact.js <project-folder> [--out impact-map.html] [--name "My app"] [--names names.json] [--user-settings settings.json] [--json graph.json]'); process.exit(opt.help ? 0 : 2); }
+  if (!opt._[0] || opt.help) { console.log('usage: node impact.js <project-folder> [--out impact-map.html] [--name "My app"] [--names names.json] [--user-settings settings.json] [--lang ar|en|auto] [--json graph.json]'); process.exit(opt.help ? 0 : 2); }
   const root = path.resolve(opt._[0]);
-  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) { console.error('المجلد غير موجود: ' + root); process.exit(2); }
+  const CM = MSG[pickLang(opt.lang)];
+  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) { console.error(CM.missingDir + root); process.exit(2); }
   try {
     const r = build(root, opt), out = path.resolve(opt.out || 'impact-map.html');
     fs.mkdirSync(path.dirname(out), { recursive: true });
     fs.writeFileSync(out, r.html);
     if (opt.json) { fs.mkdirSync(path.dirname(path.resolve(opt.json)), { recursive: true }); fs.writeFileSync(opt.json, JSON.stringify(r.graph, null, 1)); }
-    console.log('تم. الصفحة: ' + out);
-    console.log('  ' + r.project.stats.files + ' ملف، ' + r.project.stats.functions + ' دالة، ' + r.project.stats.edges + ' رابط، ' + r.project.stats.areas + ' مناطق.');
-    r.project.warnings.forEach((w) => console.log('  ملاحظة: ' + w));
-    console.log('  افتح الملف بأي متصفح.');
+    console.log(CM.done + out);
+    console.log(CM.counts(r.project.stats));
+    r.project.warnings.forEach((w) => console.log(CM.note + w));
+    console.log(CM.open);
   } catch (e) { console.error(e.message); process.exit(1); }
 }
