@@ -19,7 +19,9 @@ Claude in the centre, the permissions you allowed around it (grouped: files, com
 and a tap on a permission makes it the centre of a new map showing what branches from it (what it can do) and which parts of your project
 that reaches (using what each part's own code does: NET, STO, KEY, AI, DB, CLIP, SND, SRV, found by scanning function lines and spot-checked by hand).
 Boxes are pushed apart automatically; every one of the 18 views of the example data was checked for overlaps (none).
-The page published with this repo shows EXAMPLE approvals only.
+`examples/approvals-demo.json` is synthetic example data. First real run: one project's `.claude/settings.local.json` held a single
+saved permission (`Bash(npx shadcn@latest *)`) plus `enableAllProjectMcpServers: true`, both rated red/amber. One-time "Yes" clicks are not saved in settings,
+so this view cannot see them; it only shows standing permissions and settings.
 
 Checked on 70 rules written by an independent agent and rated by two independent reviewers (tool frozen before rating):
 of 39 rules both reviewers called red, the first version flagged 33 and, after general fixes (same data, so not independent), 37.

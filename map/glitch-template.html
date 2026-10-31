@@ -517,9 +517,11 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
   var RISKS = { red: 2, yellow: 1, green: 0 };
   function parseRaw(raw) { var m = /^([A-Za-z_][\w-]*(?:__[\w.-]+)*)(?:\(([\s\S]*)\))?$/.exec(raw); return { tool: m ? m[1] : raw, spec: m ? m[2] : undefined }; }
   function toolOfRule(r) { if (r.isMode) return "mode"; if (r.raw.indexOf("additionalDirectories") === 0) return "additionalDirectories"; var t = parseRaw(r.raw).tool; return t.indexOf("mcp__") === 0 ? "mcp" : t; }
-  function catOf(r) { if (r.kind === "deny") return "deny"; var t = toolOfRule(r); for (var i = 0; i < CATS.length; i++) if (CATS[i].tools.indexOf(t) >= 0) return CATS[i].id; return "agents"; }
+  function catOf(r) { if (r.kind === "deny") return "deny"; if (/^(enableAllProjectMcpServers|mcp server:)/.test(r.raw)) return "apps"; var t = toolOfRule(r); for (var i = 0; i < CATS.length; i++) if (CATS[i].tools.indexOf(t) >= 0) return CATS[i].id; return "agents"; }
   function shortOf(r) {
     if (r.isMode) return "وضع " + r.raw.replace("mode: ", "");
+    if (r.raw.indexOf("enableAllProjectMcpServers") === 0) return "كل خوادم المشروع";
+    if (r.raw.indexOf("mcp server:") === 0) return r.raw.split(": ")[1];
     if (r.raw.indexOf("additionalDirectories") === 0) return "مجلد " + r.raw.split(": ")[1];
     var q = parseRaw(r.raw), t = q.tool, sp = q.spec;
     if (r.kind === "deny") return "ممنوع " + (sp || t);
@@ -551,7 +553,7 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
       var mine = rs.filter(function (r) { return catOf(r) === c.id; }).sort(function (a, b) { return RISKS[b.risk] - RISKS[a.risk]; });
       if (!mine.length) return;
       var shown = mine.length > 3 ? mine.slice(0, 2) : mine, hidden = mine.length > 3 ? mine.slice(2) : [];
-      var kids = shown.map(function (r) { var cp = capsOfRule(r); return { id: "r" + r._i, kind: "rule", rule: r, label: shortOf(r), sub: r.kind === "deny" ? "ممنوع" : (cp[0] ? CAPLBL[cp[0]] : "آمن"), state: r.kind === "deny" ? "ok" : stOf(r.risk) }; });
+      var kids = shown.map(function (r) { var cp = capsOfRule(r); return { id: "r" + r._i, kind: "rule", rule: r, label: shortOf(r), sub: r.kind === "deny" ? "ممنوع" : (cp[0] ? CAPLBL[cp[0]] : (r.risk === "red" ? "خطر" : r.risk === "yellow" ? "بحذر" : "آمن")), state: r.kind === "deny" ? "ok" : stOf(r.risk) }; });
       if (hidden.length) kids.push({ id: "more:" + c.id, kind: "more", rules: hidden, label: "+" + hidden.length + " أخرى", sub: "", state: worstSt(hidden.map(function (r) { return stOf(r.risk); })) });
       groups.push({ node: { id: "cat:" + c.id, kind: "cat", cat: c, rules: mine, label: c.name, sub: mine.length + " صلاحية", state: c.id === "deny" ? "ok" : worstSt(mine.map(function (r) { return stOf(r.risk); })) }, kids: kids });
     });
@@ -678,8 +680,9 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
       }
       return;
     }
-    add("h2", "", "صلاحيات Claude");
+    add("h2", "", "صلاحيات Claude" + (APPR.label ? " · " + APPR.label : ""));
     if (APPR.demo) add("p", "demo", "موافقات تجريبية للمثال، مو موافقاتك الحقيقية.");
+    if (APPR.note) add("p", "demo", APPR.note);
     add("p", "lead", APPR.summary.sentence);
     var selN = PV._node && PV.sel ? PV._node : null;
     if (selN && (selN.kind === "cat" || selN.kind === "more")) {

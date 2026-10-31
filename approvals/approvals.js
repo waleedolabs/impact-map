@@ -130,6 +130,8 @@ function analyze(opts) {
       const d = kind === 'deny' ? { risk: 'green', plain: 'ممنوع: ' + raw, worst: 'محمي: Claude ما بيقدر يعمله', tags: [] } : kind === 'ask' ? { ...describe(raw, ctx), plain: 'بيسألك دايماً: ' + raw } : describe(raw, ctx);
       out.rules.push({ source: f.scope, scopeText: SCOPE[f.scope], kind, raw, ...d });
     }
+    if (s.enableAllProjectMcpServers === true) out.rules.push({ source: f.scope, scopeText: SCOPE[f.scope], kind: 'allow', raw: 'enableAllProjectMcpServers: true', risk: 'red', plain: 'أي خادم تطبيقات (MCP) بملف .mcp.json بهالمشروع بيتفعّل تلقائياً بدون سؤال', worst: 'لو انضاف خادم جديد للمشروع (مثلاً من مشروع نسخته من الإنترنت) بيشتغل على جهازك بدون ما يسألك', tags: ['code'] });
+    for (const n of s.enabledMcpjsonServers || []) out.rules.push({ source: f.scope, scopeText: SCOPE[f.scope], kind: 'allow', raw: 'mcp server: ' + n, risk: 'yellow', plain: 'تشغيل خادم التطبيقات «' + n + '» تلقائياً', worst: 'بيشغّل برنامجاً على جهازك وبيعطي Claude أدواته', tags: [] });
     if (p.defaultMode) out.mode = { source: f.scope, value: p.defaultMode, ...(MODES[p.defaultMode] || { risk: 'yellow', text: 'وضع ' + p.defaultMode }) };
     for (const d of p.additionalDirectories || []) {
       out.dirs.push({ source: f.scope, dir: d });
