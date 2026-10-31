@@ -8,7 +8,7 @@
 
 *مشروع تجريبي صغير. الأزرق: الجزء المختار. البرتقالي: يتأثر مباشرة. الأصفر المتقطع: قد يتأثر. الأخضر: سليم.*
 
-<p align="center"><a href="docs/demo.mp4"><b>▶ شاهد العرض (55 ثانية، بالصوت، بالإنكليزي)</b></a></p>
+<p align="center"><a href="https://github.com/waleedolabs/impact-map/blob/research/docs/demo.mp4"><b>▶ شاهد العرض (55 ثانية، بالصوت، بالإنكليزي)</b></a></p>
 
 <p align="center"><img src="docs/demo.gif" alt="عرض سريع: اختيار جزء، لو عدّلته ولو حذفته، كل التفاصيل، ومؤشر الثقة" width="720"></p>
 
@@ -172,7 +172,7 @@ claude plugin update impact-map@impact-map
 
 ## تجريبي: الحارس
 
-`hook/permission_hook.js` سكربت بيصنّف أوامر Claude Code قبل تنفيذها (آمن / بحذر / خطر) وبيسأل بجملة بسيطة. **تجريبي**: ما اتجرّب جوا جلسة Claude Code حقيقية، وبينشر منه تصنيف الصلاحيات المستعمل هون. التفاصيل والأرقام بـ`research/`.
+`hook/permission_hook.js` سكربت بيصنّف أوامر Claude Code قبل تنفيذها (آمن / بحذر / خطر) وبيسأل بجملة بسيطة. **تجريبي**: ما اتجرّب جوا جلسة Claude Code حقيقية، وبينشر منه تصنيف الصلاحيات المستعمل هون. التفاصيل والأرقام بـ[فرع `research`](https://github.com/waleedolabs/impact-map/tree/research/research).
 
 ## مساهمة وبلاغات
 

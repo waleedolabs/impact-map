@@ -8,7 +8,7 @@
 
 *A small demo project. Blue: the part you picked. Orange: directly affected. Dashed yellow: may be affected. Green: fine. The page also comes in Arabic (`--lang ar`).*
 
-<p align="center"><a href="docs/demo.mp4"><b>▶ Watch the 55-second demo with sound</b></a></p>
+<p align="center"><a href="https://github.com/waleedolabs/impact-map/blob/research/docs/demo.mp4"><b>▶ Watch the 55-second demo with sound</b></a></p>
 
 <p align="center"><img src="docs/demo.gif" alt="Quick demo: pick a part, if you edit it and if you delete it, all details, and the confidence level" width="720"></p>
 
@@ -171,7 +171,7 @@ We tried it on the cases where the map really was wrong: the 9 files it missed i
 
 ## Experimental: the guard
 
-`hook/permission_hook.js` is a script that classifies Claude Code commands before they run (safe / careful / dangerous) and asks with a simple sentence. **Experimental:** it has not been tested inside a live Claude Code session. Set `IMPACT_LANG=en` for English reasons. Details and numbers are in `research/`.
+`hook/permission_hook.js` is a script that classifies Claude Code commands before they run (safe / careful / dangerous) and asks with a simple sentence. **Experimental:** it has not been tested inside a live Claude Code session. Set `IMPACT_LANG=en` for English reasons. Details and numbers are in the [`research` branch](https://github.com/waleedolabs/impact-map/tree/research/research).
 
 ## Contributing and reports
 
