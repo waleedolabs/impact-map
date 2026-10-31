@@ -469,7 +469,8 @@ function respond(input, v) {
   return { hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'allow', permissionDecisionReason: (v.tier === 'green' ? '🟢 ' : '🟡 ') + v.effect } };
 }
 
-module.exports = { decide, respond, classifyString };
+const makeCtx = (root) => { root = path.resolve(root); return { root, cwd: root, P: makePaths(root) }; };
+module.exports = { decide, respond, classifyString, makeCtx };
 
 if (require.main === module) {
   let buf = '';

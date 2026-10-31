@@ -1,7 +1,7 @@
 'use strict';
 // build_glitch_page.js <graph.json> <results.json|-> <out.html>
 const fs = require('fs');
-const [graphFile, resFile, outFile] = process.argv.slice(2);
+const [graphFile, resFile, outFile, apprFile] = process.argv.slice(2);
 const g = JSON.parse(fs.readFileSync(graphFile, 'utf8'));
 const tpl = fs.readFileSync(__dirname + '/glitch-template.html', 'utf8');
 
@@ -53,6 +53,6 @@ const slim = {
   edges: g.edges.map((e) => ({ from: e.from, to: e.to, how: e.how })),
 };
 const res = resFile !== '-' ? JSON.parse(fs.readFileSync(resFile, 'utf8')) : null;
-let html = tpl.replace('/*GRAPH*/null', JSON.stringify(slim)).replace('/*AREAS*/null', JSON.stringify(AREAS)).replace('/*RESULTS*/null', JSON.stringify(res));
+let html = tpl.replace('/*GRAPH*/null', JSON.stringify(slim)).replace('/*AREAS*/null', JSON.stringify(AREAS)).replace('/*RESULTS*/null', JSON.stringify(res)).replace('/*APPROVALS*/null', JSON.stringify(apprFile ? JSON.parse(fs.readFileSync(apprFile, 'utf8')) : null));
 fs.writeFileSync(outFile, html);
 console.error('wrote', outFile, html.length, 'bytes');

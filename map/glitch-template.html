@@ -117,6 +117,24 @@ textarea { width: 100%; font: inherit; color: var(--ink); background: var(--bg);
 #msg { line-height: 1.75; min-height: 11rem; }
 .note { margin: 0; color: var(--muted); font-size: .8125rem; }
 
+[hidden] { display: none !important; }
+.stack { display: grid; gap: 16px; }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.tabs button { font: inherit; font-weight: 600; padding: 11px 12px; background: transparent; color: var(--ink); border: 0; cursor: pointer; }
+.tabs button + button { border-inline-start: 1px solid var(--line); }
+.tabs button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.tabs button:focus-visible { outline: 3px solid var(--target); outline-offset: -3px; }
+.appr { display: grid; gap: 14px; }
+.appr h2 { margin: 0; font-size: 1.25rem; }
+.appr .lead { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--bg); font-weight: 600; line-height: 1.8; border-inline-start: 5px solid var(--removed); }
+.appr .demo { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--indirect-bg); border: 1px dashed var(--indirect); color: var(--ink); font-size: .875rem; }
+.rule { padding: 10px 12px; border-radius: 10px; border-inline-start: 5px solid; background: var(--bg); display: grid; gap: 2px; }
+.rule b { font-weight: 600; }
+.rule .worst { font-size: .9375rem; }
+.rule .meta { color: var(--muted); font-size: .8125rem; }
+.rule code { direction: ltr; unicode-bidi: isolate; display: inline-block; font-size: .8125rem; color: var(--muted); }
+.r-red { border-color: var(--removed); } .r-yellow { border-color: var(--direct); } .r-green { border-color: var(--safe); }
+.appr h3 { margin: 6px 0 4px; font-size: .9375rem; }
 .proof h2 { margin: 0 0 6px; font-size: 1.125rem; }
 .proof p { margin: 0 0 8px; }
 .proof ul { margin: 0 0 8px; padding-inline-start: 1.2rem; display: grid; gap: 4px; }
@@ -133,6 +151,12 @@ textarea { width: 100%; font: inherit; color: var(--ink); background: var(--bg);
     <p>هاي خريطة لعبتك الحقيقية، طالعة من الكود نفسه (112 دالة بملفين). اضغط على أي جزء، واختر «تعديل» أو «حذف»، وشوف شو رح يتأثر قبل ما تلمس شي. الأسماء التقنية مخبّأة تحت زر «التفاصيل التقنية».</p>
   </header>
 
+  <nav class="tabs" aria-label="العرض">
+    <button type="button" id="tabMap" aria-pressed="true">خريطة المشروع</button>
+    <button type="button" id="tabAppr" aria-pressed="false">كشف الموافقات</button>
+  </nav>
+
+  <div id="mapView" class="stack">
   <div class="cols">
     <section class="card" aria-label="خريطة اللعبة">
       <svg id="map" role="group" aria-label="خريطة أجزاء اللعبة">
@@ -167,6 +191,9 @@ textarea { width: 100%; font: inherit; color: var(--ink); background: var(--bg);
   </div>
 
   <section class="card proof" id="proof" aria-label="مدى دقة الخريطة"></section>
+  </div>
+
+  <section class="card appr" id="apprView" aria-label="كشف الموافقات" hidden></section>
 </main>
 
 <script>
@@ -176,6 +203,7 @@ textarea { width: 100%; font: inherit; color: var(--ink); background: var(--bg);
   var G = /*GRAPH*/null;
   var RES = /*RESULTS*/null;
   var AREAS = /*AREAS*/null;
+  var APPR = /*APPROVALS*/null;
 
   // ---- graph lookups ---------------------------------------------------------------------
   var NODE = {}, KIDS = {}, DEPS = {};
@@ -425,6 +453,44 @@ textarea { width: 100%; font: inherit; color: var(--ink); background: var(--bg);
   }
   $("mModify").addEventListener("click", function () { state.mode = "modify"; render(); });
   $("mDelete").addEventListener("click", function () { state.mode = "delete"; render(); });
+
+  // ---- approvals view ---------------------------------------------------------------------------
+  function renderApprovals() {
+    var v = $("apprView"); v.textContent = "";
+    function add(tag, cls, text, parent) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; (parent || v).appendChild(e); return e; }
+    add("h2", "", "شو سمحت له، ولوين بيمتد");
+    if (!APPR) { add("p", "safe-line", "ما في موافقات محمّلة بعد."); return; }
+    if (APPR.demo) add("p", "demo", "هاي أمثلة تجريبية على شكل موافقات بتتراكم عند الناس، مو موافقاتك الحقيقية. موافقاتك الحقيقية بتنقرأ من ملف إعدادات Claude Code بمجلد مشروعك.");
+    add("p", "lead", APPR.summary.sentence);
+    var ch = add("div", "chips", null);
+    ch.appendChild(chip("removed", "خطر " + APPR.summary.byRisk.red));
+    ch.appendChild(chip("direct", "بحذر " + APPR.summary.byRisk.yellow));
+    ch.appendChild(chip("safe", "آمن " + APPR.summary.byRisk.green));
+    if (APPR.mode && APPR.mode.risk !== "green") add("p", "demo", APPR.mode.text);
+    [["red", "صلاحيات دائمة خطرة: بتمر بدون سؤال"], ["yellow", "صلاحيات دائمة بحذر"], ["green", "صلاحيات آمنة وحمايات"]].forEach(function (g) {
+      var list = APPR.rules.filter(function (r) { return r.risk === g[0]; });
+      if (!list.length) return;
+      add("h3", "", g[1] + " (" + list.length + ")");
+      list.forEach(function (r) {
+        var d = add("div", "rule r-" + g[0], null);
+        add("b", "", r.plain, d);
+        add("span", "worst", (r.kind === "deny" ? "" : "أسوأ شي بيغطيه: ") + r.worst, d);
+        var m = add("span", "meta", r.scopeText + " · ", d); add("code", "", r.raw, m);
+      });
+    });
+    if (APPR.activity) {
+      add("h3", "", "شو شافه الحارس فعلياً");
+      add("p", "safe-line", APPR.activity.total + " عملية: " + APPR.activity.byTier.green + " آمنة، " + APPR.activity.byTier.yellow + " بحذر، " + APPR.activity.byTier.red + " خطرة.");
+    }
+  }
+  function showTab(which) {
+    var a = which === "appr";
+    $("mapView").hidden = a; $("apprView").hidden = !a;
+    $("tabMap").setAttribute("aria-pressed", String(!a)); $("tabAppr").setAttribute("aria-pressed", String(a));
+    if (a) renderApprovals(); else fit();
+  }
+  $("tabMap").addEventListener("click", function () { showTab("map"); });
+  $("tabAppr").addEventListener("click", function () { showTab("appr"); });
 
   // ---- proof section ---------------------------------------------------------------------------------
   (function proof() {

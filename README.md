@@ -10,6 +10,18 @@ hook/       permission_hook.js     a Claude Code PreToolUse hook: green / yellow
 tests/      corpora + scoring      real and independently written tool calls, labelled blind
 ```
 
+## Approvals view: what you allowed, and how far it reaches
+
+`approvals/approvals.js` reads a project's `.claude/settings.json` / `settings.local.json` (and a user settings file if given)
+and says, in plain Arabic, what each standing permission can do at its worst, and what Claude can now do without asking.
+The map page has a second tab, "كشف الموافقات", that shows it. The page published with this repo shows EXAMPLE data only.
+
+Checked on 70 rules written by an independent agent and rated by two independent reviewers (tool frozen before rating):
+of 39 rules both reviewers called red, the first version flagged 33 and, after general fixes (same data, so not independent), 37.
+Remaining differences: bare `Edit`/`Write` (kept yellow), unknown programs (yellow, "unknown"), `rm -rf node_modules` and
+similar exact commands (red; reviewers yellow). Not done yet: running it on a real user's accumulated approvals, and "where it reached"
+from real activity (needs the hook's log or Claude Code transcripts).
+
 ## Install the hook (Claude Code)
 
 `.claude/settings.json` in the project:
