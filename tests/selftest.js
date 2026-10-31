@@ -30,4 +30,10 @@ assert.ok(!AR_LETTERS.test(JSON.stringify(en.grouped.areas)) && !AR_LETTERS.test
 const aEn = analyze({ project: path.join(__dirname, 'fixtures', 'settings-demo'), lang: 'en' });
 assert.ok(!AR_LETTERS.test(JSON.stringify(aEn.rules.map((x) => [x.plain, x.worst])) + aEn.summary.sentence), 'English permission texts have no Arabic');
 assert.deepStrictEqual(aEn.rules.map((x) => x.risk), a.rules.map((x) => x.risk), 'risk levels do not depend on the language');
+// both languages must describe the very same parts (the in-page switch relies on it)
+{
+  const ids = (g) => JSON.stringify(g.areas.map((a) => [a.id, a.members, a.leaves.map((l) => [l.id, l.members])]));
+  const r = build(path.join(__dirname, 'fixtures', 'shop'), {});
+  assert(ids(r.groupedAll.ar) === ids(r.groupedAll.en), 'areas differ between Arabic and English');
+}
 console.log('ok: map, grouping, approvals, confidence, English and page all work on the bundled project');

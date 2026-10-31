@@ -6,7 +6,7 @@
 
 <p align="center"><img src="https://raw.githubusercontent.com/waleedolabs/impact-map/research/docs/map.png" alt="Project map: pick a part and see what is affected if you edit or delete it" width="900"></p>
 
-*A small demo project. Blue: the part you picked. Orange: directly affected. Dashed yellow: may be affected. Green: fine. The page also comes in Arabic (`--lang ar`).*
+*A small demo project. Blue: the part you picked. Orange: directly affected. Dashed yellow: may be affected. Green: fine. The page has an English ⇄ العربية button, so you can switch language right inside it.*
 
 <p align="center"><a href="https://github.com/waleedolabs/impact-map/blob/research/docs/demo.mp4"><b>▶ Watch the 55-second demo with sound</b></a></p>
 
@@ -109,7 +109,7 @@ It writes `impact-map.html`; open it in any browser. Options:
 | Option | What it does |
 |---|---|
 | `--out file.html` | where to write the page |
-| `--lang ar` / `en` / `auto` | language of the page and of what the tool prints (default `auto`: Arabic on an Arabic computer, otherwise English) |
+| `--lang ar` / `en` / `auto` | language the page opens in (a button inside the page switches it) and of what the tool prints (default `auto`: Arabic on an Arabic computer, otherwise English) |
 | `--name "Name"` | the name shown on the page |
 | `--names names.json` | your own names for the parts (instead of the automatic ones) |
 | `--user-settings file.json` | a copy of your personal Claude Code settings (you have to give it a copy yourself) |

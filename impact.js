@@ -66,38 +66,44 @@ function build(root, opt) {
     throw new Error(M.nothing + (langs.length ? M.foundOther(langs.map((l) => l + '×' + other[l]).join(M.and)) : M.checkFolder));
   }
   const names = opt.names ? JSON.parse(fs.readFileSync(opt.names, 'utf8')) : {};
-  const grouped = groupProject(graph, root, { names, lang });
-  const warnings = [];
-  if (graph.stats.skippedTypeScript) warnings.push(M.ts(graph.stats.skippedTypeScript));
-  const otherSkipped = graph.skipped.filter((s) => !/TypeScript file/.test(s.why));
-  if (otherSkipped.length) warnings.push(M.skipped(otherSkipped.slice(0, 3).map((s) => s.file + ' (' + s.why + ')').join(M.comma), otherSkipped.length > 3));
-  const dyn = graph.problems.filter((p) => /variable name/.test(p.note));
-  if (dyn.length) warnings.push(M.dyn(dyn.slice(0, 3).map((p) => p.file).join(M.comma)));
+  // the page carries both languages (the reader can switch inside the page); `lang` only decides which one it opens in
+  const groupedAll = {}; for (const l of ['ar', 'en']) groupedAll[l] = groupProject(graph, root, { names, lang: l });
+  const grouped = groupedAll[lang];
   const other = otherLanguages(root);
-  if (Object.keys(other).length) warnings.push(M.langs(Object.keys(other).map((l) => l + '×' + other[l]).join(M.and)));
-  warnings.push(M.estimate);
+  const warningsFor = (MM) => {
+    const w = [];
+    if (graph.stats.skippedTypeScript) w.push(MM.ts(graph.stats.skippedTypeScript));
+    const otherSkipped = graph.skipped.filter((s) => !/TypeScript file/.test(s.why));
+    if (otherSkipped.length) w.push(MM.skipped(otherSkipped.slice(0, 3).map((s) => s.file + ' (' + s.why + ')').join(MM.comma), otherSkipped.length > 3));
+    const dyn = graph.problems.filter((p) => /variable name/.test(p.note));
+    if (dyn.length) w.push(MM.dyn(dyn.slice(0, 3).map((p) => p.file).join(MM.comma)));
+    if (Object.keys(other).length) w.push(MM.langs(Object.keys(other).map((l) => l + '×' + other[l]).join(MM.and)));
+    w.push(MM.estimate); return w;
+  };
+  const warningsAll = { ar: warningsFor(MSG.ar), en: warningsFor(MSG.en) }, warnings = warningsAll[lang];
 
   // permissions: standing permissions saved by Claude Code for this project (and your personal file, only if you point to it)
-  let appr;
-  if (opt.approvals) {   // ready-made demo data; for English a sibling "<name>.en.json" is used when it exists
-    let f = opt.approvals; const en = f.replace(/\.json$/, '.en.json');
-    if (lang === 'en' && en !== f && fs.existsSync(en)) f = en;
-    appr = JSON.parse(fs.readFileSync(f, 'utf8'));
-  }
-  else {
-    const a = analyzeApprovals({ project: root, user: opt['user-settings'], lang });
-    if (a.files.length) { delete a.project; delete a.files; appr = Object.assign(a, { demo: false, label: name, note: M.noteFound }); }
-    else appr = { demo: false, label: name, note: M.noteNone, rules: [], mode: null, dirs: [], hooks: [], summary: { capKeys: [], allowed: 0, denied: 0, byRisk: { red: 0, yellow: 0, green: 0 }, sentence: M.noneSentence } };
-  }
+  const apprFor = (l) => {
+    const MM = MSG[l];
+    if (opt.approvals) {   // ready-made demo data; for English a sibling "<name>.en.json" is used when it exists
+      let f = opt.approvals; const en = f.replace(/\.json$/, '.en.json');
+      if (l === 'en' && en !== f && fs.existsSync(en)) f = en;
+      return JSON.parse(fs.readFileSync(f, 'utf8'));
+    }
+    const a = analyzeApprovals({ project: root, user: opt['user-settings'], lang: l });
+    if (a.files.length) { delete a.project; delete a.files; return Object.assign(a, { demo: false, label: name, note: MM.noteFound }); }
+    return { demo: false, label: name, note: MM.noteNone, rules: [], mode: null, dirs: [], hooks: [], summary: { capKeys: [], allowed: 0, denied: 0, byRisk: { red: 0, yellow: 0, green: 0 }, sentence: MM.noneSentence } };
+  };
+  const apprAll = { ar: apprFor('ar'), en: apprFor('en') }, appr = apprAll[lang];
   const slim = { nodes: graph.nodes.map((n) => ({ id: n.id, name: n.name, file: n.file, kind: n.kind, start: n.start, parent: n.parent, caps: n.caps })), edges: graph.edges.map((e) => ({ from: e.from, to: e.to, how: e.how })),
     facts: graph.facts, dataRefs: graph.dataRefs, pkg: graph.pkg, problems: graph.problems.map((p) => ({ file: p.file })) };
-  const project = { name, stats: { files: graph.stats.files, functions: graph.stats.functions, edges: graph.stats.edges, areas: grouped.stats.areas, parts: grouped.stats.parts }, warnings, lang };
+  const project = { name, stats: { files: graph.stats.files, functions: graph.stats.functions, edges: graph.stats.edges, areas: grouped.stats.areas, parts: grouped.stats.parts }, warnings, warningsAll, lang };
   let html = fs.readFileSync(path.join(__dirname, 'map', 'template.html'), 'utf8');
   if (lang === 'en') html = html.replace('<html lang="ar" dir="rtl">', '<html lang="en" dir="ltr">');
   const put = (k, v) => { html = html.split('/*' + k + '*/null').join(JSON.stringify(v).replace(/</g, '\\u003c')); };
   html = html.split('/*CONFJS*/').join(fs.readFileSync(path.join(__dirname, 'analyzer', 'confidence.js'), 'utf8').replace(/<\/script/gi, '<\\/script'));
-  put('GRAPH', slim); put('AREAS', grouped.areas); put('RESULTS', null); put('APPROVALS', appr); put('PROJECT', project);
-  return { html, graph, grouped, project, appr };
+  put('GRAPH', slim); put('AREAS', { ar: groupedAll.ar.areas, en: groupedAll.en.areas }); put('RESULTS', null); put('APPROVALS', apprAll); put('PROJECT', project);
+  return { html, graph, grouped, groupedAll, project, appr, apprAll };
 }
 
 module.exports = { build };

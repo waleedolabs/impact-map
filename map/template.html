@@ -307,6 +307,7 @@ body.hack .flow-edge { stroke: #39ff14; }
   <main class="workspace">
       <section class="stage" id="stage" aria-label="الخريطة" data-en-aria="Map">
         <div class="hud hud-tools" role="group" aria-label="أدوات العرض" data-en-aria="View tools">
+          <button type="button" id="bLang" class="txt">English</button>
           <button type="button" id="bTheme" class="theme" title="فاتح / داكن" aria-label="تبديل الوضع الفاتح والداكن" data-en-title="Light / dark" data-en-aria="Switch between light and dark"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 2a7 7 0 0 1 0 14z" fill="currentColor"/></svg></button>
           <button type="button" id="bFull" class="txt" aria-pressed="false" title="اعرض كل الدوال والتفرعات" data-en="All details" data-en-title="Show every function and branch">كل التفاصيل</button>
           <button type="button" id="bIn" title="تقريب" aria-label="تقريب" data-en-title="Zoom in" data-en-aria="Zoom in">+</button>
@@ -366,30 +367,52 @@ body.hack .flow-edge { stroke: #39ff14; }
   /*CONFJS*/
   var G = /*GRAPH*/null;
   var RES = /*RESULTS*/null;
-  var AREAS = /*AREAS*/null;
-  var APPR = /*APPROVALS*/null;
+  var AREAS_ALL = /*AREAS*/null;
+  var APPR_ALL = /*APPROVALS*/null;
   var PROJECT = /*PROJECT*/null;
-  var LANG = PROJECT.lang === "en" ? "en" : "ar", EN = LANG === "en";
+  // The page carries both languages and switches between them inside the page; PROJECT.lang is only the language it opens in.
+  var LANG, EN, COMMA, AND, Q1, Q2, AREAS, APPR, LEX = [];
   function T(ar, en) { return EN ? en : ar; }
-  var COMMA = EN ? ", " : "، ", AND = EN ? " and " : " و", Q1 = EN ? "\"" : "«", Q2 = EN ? "\"" : "»";
   function q(x) { return Q1 + x + Q2; }
   function listJoin(a) { return EN ? (a.length > 2 ? a.slice(0, -1).join(", ") + " and " + a[a.length - 1] : a.join(" and ")) : a.join(AND); }
-  if (EN) {
-    document.documentElement.lang = "en"; document.documentElement.dir = "ltr";
+  function setLangVars(l) {
+    LANG = l === "en" ? "en" : "ar"; EN = LANG === "en";
+    COMMA = EN ? ", " : "، "; AND = EN ? " and " : " و"; Q1 = EN ? "\"" : "«"; Q2 = EN ? "\"" : "»";
+    AREAS = Array.isArray(AREAS_ALL) ? AREAS_ALL : (AREAS_ALL[LANG] || AREAS_ALL.ar);
+    APPR = APPR_ALL && (APPR_ALL.ar || APPR_ALL.en) && !APPR_ALL.rules ? (APPR_ALL[LANG] || APPR_ALL.ar || APPR_ALL.en) : APPR_ALL;
+  }
+  function runLex() { LEX.forEach(function (f) { f(); }); }
+  (function () { var st = null; try { st = localStorage.getItem("impact:lang"); } catch (e) {} setLangVars(st === "en" || st === "ar" ? st : PROJECT.lang); })();
+  function applyHtmlLang() {   // the Arabic text is the page's own; the English text sits in data-en attributes
+    document.documentElement.lang = LANG; document.documentElement.dir = EN ? "ltr" : "rtl";
     document.querySelectorAll("[data-en],[data-en-aria],[data-en-title]").forEach(function (e) {
-      if (e.hasAttribute("data-en")) e.textContent = e.getAttribute("data-en");
-      if (e.hasAttribute("data-en-aria")) e.setAttribute("aria-label", e.getAttribute("data-en-aria"));
-      if (e.hasAttribute("data-en-title")) e.setAttribute("title", e.getAttribute("data-en-title"));
+      if (!e.hasAttribute("data-ar-saved")) {
+        e.setAttribute("data-ar-saved", "1");
+        if (e.hasAttribute("data-en")) e.setAttribute("data-ar", e.textContent);
+        if (e.hasAttribute("data-en-aria")) e.setAttribute("data-ar-aria", e.getAttribute("aria-label") || "");
+        if (e.hasAttribute("data-en-title")) e.setAttribute("data-ar-title", e.getAttribute("title") || "");
+      }
+      if (e.hasAttribute("data-en")) e.textContent = EN ? e.getAttribute("data-en") : e.getAttribute("data-ar");
+      if (e.hasAttribute("data-en-aria")) e.setAttribute("aria-label", EN ? e.getAttribute("data-en-aria") : e.getAttribute("data-ar-aria"));
+      if (e.hasAttribute("data-en-title")) e.setAttribute("title", EN ? e.getAttribute("data-en-title") : e.getAttribute("data-ar-title"));
     });
   }
+  function mapIntro() { return EN ? PROJECT.stats.files + " files and " + PROJECT.stats.functions + " functions, drawn from the code itself. Click any part and see what will be affected if you edit or delete it, before you touch anything." : PROJECT.stats.files + " ملف و" + PROJECT.stats.functions + " دالة، مرسومة من الكود نفسه. اضغط أي جزء، واختر «تعديل» أو «حذف» لتشوف شو رح يتأثر قبل ما تلمس شي."; }
+  function hackIntro() { return T("هون كل شي سمحت لClaude فيه. المركز هو Claude، وحواليه الصلاحيات، واضغط أي وحدة لتشوف شو تفرّع منها وأي أجزاء من مشروعك بتوصلها.", "Everything you allowed Claude to do. Claude is at the center and its permissions are around it. Click any permission to see what branches from it and which parts of your project it reaches."); }
+  function applyTexts() {
+    document.title = T("خريطة الأثر · ", "Impact Map · ") + PROJECT.name;
+    $("projName").textContent = T("خريطة ", "Impact map of ") + PROJECT.name;
+    $("intro").textContent = typeof HACK !== "undefined" && HACK ? hackIntro() : mapIntro();
+    var W = PROJECT.warningsAll ? PROJECT.warningsAll[LANG] : PROJECT.warnings, lim = $("limits");
+    if (W && W.length) { lim.hidden = false; lim.textContent = W.join(" · "); } else lim.hidden = true;
+    var bl = $("bLang"); bl.textContent = EN ? "العربية" : "English"; bl.setAttribute("aria-label", EN ? "التبديل إلى العربية (Switch to Arabic)" : "Switch to English (التبديل إلى الإنكليزية)"); bl.setAttribute("title", bl.getAttribute("aria-label"));
+  }
+  applyHtmlLang();
   var LSKEY = "impact:" + PROJECT.name + ":names";
   function loadNames() { try { return JSON.parse(localStorage.getItem(LSKEY) || "{}") || {}; } catch (e) { return {}; } }
   function saveNames(n) { try { localStorage.setItem(LSKEY, JSON.stringify(n)); } catch (e) {} }
   var NM = loadNames();
-  document.title = T("خريطة الأثر · ", "Impact Map · ") + PROJECT.name;
-  $("projName").textContent = T("خريطة ", "Impact map of ") + PROJECT.name;
-  $("intro").textContent = EN ? PROJECT.stats.files + " files and " + PROJECT.stats.functions + " functions, drawn from the code itself. Click any part and see what will be affected if you edit or delete it, before you touch anything." : PROJECT.stats.files + " ملف و" + PROJECT.stats.functions + " دالة، مرسومة من الكود نفسه. اضغط أي جزء، واختر «تعديل» أو «حذف» لتشوف شو رح يتأثر قبل ما تلمس شي.";
-  if (PROJECT.warnings && PROJECT.warnings.length) { var lim = $("limits"); lim.hidden = false; lim.textContent = PROJECT.warnings.join(" · "); }
+  applyTexts();
 
   // ---- graph lookups ---------------------------------------------------------------------
   var NODE = {}, KIDS = {}, DEPS = {};
@@ -404,7 +427,7 @@ body.hack .flow-edge { stroke: #39ff14; }
     return n.name;
   }
   function where(id) { var n = NODE[id]; return n.kind === "route" || n.kind === "top" ? n.file : n.file + ":" + n.start; }
-  var HOW = EN ? { calls: "calls", passes: "passes", uses: "reads", network: "sends a request to" } : { calls: "يستدعي", passes: "يمرّر", uses: "يقرأ", network: "يرسل طلباً إلى" };
+  var HOW; LEX.push(function () { HOW = EN ? { calls: "calls", passes: "passes", uses: "reads", network: "sends a request to" } : { calls: "يستدعي", passes: "يمرّر", uses: "يقرأ", network: "يرسل طلباً إلى" }; });
 
   // ---- display nodes (areas and leaves) -------------------------------------------------------
   var DISP = {}, order = [];
@@ -588,7 +611,7 @@ body.hack .flow-edge { stroke: #39ff14; }
   }
 
   var BADGE = { removed: ["✕", "b-removed"], target: ["✎", "b-target"], direct: ["!", "b-direct"], indirect: ["~", "b-indirect"], safe: ["✓", "b-safe"] };
-  var STATUS = EN ? { target: "to edit", removed: "will be deleted", direct: "directly affected", indirect: "may be affected", safe: "fine" } : { target: "ستعدّله", removed: "سيُحذف", direct: "يتأثر مباشرة", indirect: "قد يتأثر", safe: "سليم" };
+  var STATUS; LEX.push(function () { STATUS = EN ? { target: "to edit", removed: "will be deleted", direct: "directly affected", indirect: "may be affected", safe: "fine" } : { target: "ستعدّله", removed: "سيُحذف", direct: "يتأثر مباشرة", indirect: "قد يتأثر", safe: "سليم" }; });
 
 
   var STCOL = { target: "var(--target)", removed: "var(--removed)", direct: "var(--direct)", indirect: "var(--indirect)", safe: "var(--safe)" };
@@ -746,15 +769,15 @@ body.hack .flow-edge { stroke: #39ff14; }
   $("colDelete").addEventListener("click", function (e) { if (state.mode !== "delete" && !e.target.closest("details, summary")) { state.mode = "delete"; render(); } });
 
   // ---- permissions mode: its own map (centre -> permissions -> what branches from each) ------------
-  var HACK = false, MAP_INTRO = $("intro").textContent;
+  var HACK = false;
   var PM = $("permMap"), PV = { view: "top", rule: null, sel: null };
   var UNITS = order.filter(function (g) { return g.kind === "leaf" || (g.kind === "area" && !g.leaves.length); });
   function unitCaps(u) { var c = {}; u.members.forEach(function (m) { (NODE[m].caps || []).forEach(function (k) { (c[k] = c[k] || []).push(m); }); }); return c; }
   function unitName(u) { return u.kind === "leaf" ? u.name + " · " + DISP[u.area].name : u.name; }
-  var CAPLBL = EN ? { delete: "deletes files", send: "sends to the internet", install: "installs programs", code: "runs any code", secrets: "reads secrets", outside: "outside the project", modify: "edits files" } : { delete: "يمسح ملفات", send: "يرسل للإنترنت", install: "يثبّت برامج", code: "يشغّل أي كود", secrets: "يقرأ الأسرار", outside: "برا المشروع", modify: "يعدّل ملفات" };
+  var CAPLBL; LEX.push(function () { CAPLBL = EN ? { delete: "deletes files", send: "sends to the internet", install: "installs programs", code: "runs any code", secrets: "reads secrets", outside: "outside the project", modify: "edits files" } : { delete: "يمسح ملفات", send: "يرسل للإنترنت", install: "يثبّت برامج", code: "يشغّل أي كود", secrets: "يقرأ الأسرار", outside: "برا المشروع", modify: "يعدّل ملفات" }; });
   var CAPSTATE = { delete: "danger", send: "danger", install: "danger", code: "danger", secrets: "danger", outside: "watch", modify: "watch" };
-  var CAPEXPL = EN ? { delete: "Can delete files with no undo.", send: "Can send data to the internet or publish.", install: "Can download and install programs and packages on your computer.", code: "Can run any code, so anything is possible.", secrets: "Can read secret files: keys and passwords.", outside: "Can reach files outside the project folder.", modify: "Can edit files without asking you." } : { delete: "يقدر يمسح ملفات بدون تراجع.", send: "يقدر يرسل بيانات للإنترنت أو ينشر.", install: "يقدر ينزّل ويثبّت برامج وحزماً على جهازك.", code: "يقدر يشغّل أي كود، فكل شي ممكن.", secrets: "يقدر يقرأ ملفات سرية: مفاتيح وكلمات سر.", outside: "يقدر يوصل لملفات برا مجلد المشروع.", modify: "يقدر يعدّل الملفات بدون ما يسألك." };
-  var CATS = [
+  var CAPEXPL; LEX.push(function () { CAPEXPL = EN ? { delete: "Can delete files with no undo.", send: "Can send data to the internet or publish.", install: "Can download and install programs and packages on your computer.", code: "Can run any code, so anything is possible.", secrets: "Can read secret files: keys and passwords.", outside: "Can reach files outside the project folder.", modify: "Can edit files without asking you." } : { delete: "يقدر يمسح ملفات بدون تراجع.", send: "يقدر يرسل بيانات للإنترنت أو ينشر.", install: "يقدر ينزّل ويثبّت برامج وحزماً على جهازك.", code: "يقدر يشغّل أي كود، فكل شي ممكن.", secrets: "يقدر يقرأ ملفات سرية: مفاتيح وكلمات سر.", outside: "يقدر يوصل لملفات برا مجلد المشروع.", modify: "يقدر يعدّل الملفات بدون ما يسألك." }; });
+  var CATS; LEX.push(function () { CATS = [
     { id: "files", name: T("الملفات", "Files"), tools: ["Read", "Edit", "Write", "MultiEdit", "NotebookEdit", "Glob", "Grep", "LS", "additionalDirectories"] },
     { id: "cmd", name: T("الأوامر", "Commands"), tools: ["Bash"] },
     { id: "net", name: T("الإنترنت", "Internet"), tools: ["WebFetch", "WebSearch"] },
@@ -762,8 +785,8 @@ body.hack .flow-edge { stroke: #39ff14; }
     { id: "agents", name: T("وكلاء ومهارات", "Agents and skills"), tools: ["Task", "Agent", "Skill", "TodoWrite"] },
     { id: "mode", name: T("الوضع العام", "General mode"), tools: ["mode"] },
     { id: "deny", name: T("الحمايات", "Protections"), tools: [] }
-  ];
-  var SRC = EN ? { user: "All your projects", project: "This project (shared)", local: "This project (only you)" } : { user: "كل مشاريعك", project: "هالمشروع (مشترك)", local: "هالمشروع (عندك بس)" };
+  ]; });
+  var SRC; LEX.push(function () { SRC = EN ? { user: "All your projects", project: "This project (shared)", local: "This project (only you)" } : { user: "كل مشاريعك", project: "هالمشروع (مشترك)", local: "هالمشروع (عندك بس)" }; });
   var RISKS = { red: 2, yellow: 1, green: 0 };
   function parseRaw(raw) { var m = /^([A-Za-z_][\w-]*(?:__[\w.-]+)*)(?:\(([\s\S]*)\))?$/.exec(raw); return { tool: m ? m[1] : raw, spec: m ? m[2] : undefined }; }
   function toolOfRule(r) { if (r.isMode) return "mode"; if (r.raw.indexOf("additionalDirectories") === 0) return "additionalDirectories"; var t = parseRaw(r.raw).tool; return t.indexOf("mcp__") === 0 ? "mcp" : t; }
@@ -960,7 +983,7 @@ body.hack .flow-edge { stroke: #39ff14; }
     setHidden($("map"), HACK); setHidden($("permMap"), !HACK);
     $("panel").hidden = HACK; $("cols").hidden = HACK; $("permPanel").hidden = !HACK; $("proof").hidden = HACK || !RES; $("strip").hidden = HACK;
     $("legendMap").hidden = HACK; $("legendHack").hidden = !HACK; $("hackPrompt").hidden = !HACK;
-    $("intro").textContent = HACK ? T("هون كل شي سمحت لClaude فيه. المركز هو Claude، وحواليه الصلاحيات، واضغط أي وحدة لتشوف شو تفرّع منها وأي أجزاء من مشروعك بتوصلها.", "Everything you allowed Claude to do. Claude is at the center and its permissions are around it. Click any permission to see what branches from it and which parts of your project it reaches.") : MAP_INTRO;
+    $("intro").textContent = HACK ? hackIntro() : mapIntro();
     var st = $("stage"); st.classList.remove("boot"); void st.offsetWidth; if (HACK) st.classList.add("boot");
     if (HACK) { PV = { view: "top", rule: null, sel: null }; drawPerm(); renderPermPanel(); typePrompt("$ claude --permissions --reach"); } else { render(); fit(); }
     resetView();
@@ -1041,6 +1064,27 @@ body.hack .flow-edge { stroke: #39ff14; }
     s.innerHTML = h;
   })();
 
+  // ---- switch language inside the page ------------------------------------------------------------------
+  function refreshDisp() {   // same parts (same ids and members) in both languages; only the names and descriptions change
+    AREAS.forEach(function (a) {
+      var an = DISP[a.id]; if (!an) return; an.name = NM[a.id] || a.name; an.desc = a.desc;
+      a.leaves.forEach(function (l) { var ln = DISP[l.id]; if (ln) { ln.name = NM[l.id] || l.name; ln.desc = l.desc || a.desc; } });
+    });
+  }
+  function switchLang(l) {
+    if (l === LANG) return;
+    setLangVars(l); try { localStorage.setItem("impact:lang", LANG); } catch (e) {}
+    applyHtmlLang(); runLex(); refreshDisp(); applyTexts();
+    FNALL.forEach(function (d) { delete DISP[d.id]; }); FNALL = [];   // function boxes carry their label in the old language: rebuilt below
+    order.forEach(function (d) { var pb = pickBtns[d.id]; if (pb) pb.s.textContent = d.name; });
+    if (FULL) { $("bFull").textContent = T("ملخّص", "Summary"); $("hint").textContent = T("كل دالة صارت مربع · كبّر بالعجلة واسحب", "Every function is a box · zoom with the wheel and drag"); }
+    buildMap();
+    if (HACK) { PV = { view: "top", rule: null, sel: null }; drawPerm(); renderPermPanel(); } else { render(); }
+    resetView();
+  }
+  $("bLang").addEventListener("click", function () { switchLang(EN ? "ar" : "en"); });
+
+  runLex();
   render();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
 })();
