@@ -9,8 +9,8 @@ const path = require('path');
 const { classifyString, makeCtx } = require('../hook/permission_hook.js');
 
 const RANK = { green: 0, yellow: 1, red: 2 };
-const SCOPE = { user: 'كل مشاريعك', project: 'هالمشروع (ملف مشترك مع غيرك)', local: 'هالمشروع (عندك بس)' };
-const SCOPE_EN = { user: 'all your projects', project: 'this project (a file shared with others)', local: 'this project (yours only)' };
+const SCOPE = { user: 'كل مشاريعك', project: 'هالمشروع (ملف مشترك مع غيرك)', local: 'هالمشروع (عندك بس)', parent: 'المجلد الأكبر اللي فيه المشروع' };
+const SCOPE_EN = { user: 'all your projects', project: 'this project (a file shared with others)', local: 'this project (yours only)', parent: 'the bigger folder that contains this project' };
 // L(lang, arabic, english): picks the text for the language
 const L = (lang, ar, en) => (lang === 'en' ? en : ar);
 const langOf = (lang) => (lang === 'en' ? 'en' : 'ar');
@@ -143,7 +143,13 @@ function analyze(opts) {
   const ctx = makeCtx(root);
   const files = [];
   if (opts.user) files.push({ file: opts.user, scope: 'user' });
-  files.push({ file: path.join(root, '.claude', 'settings.json'), scope: 'project' }, { file: path.join(root, '.claude', 'settings.local.json'), scope: 'local' });
+  // Claude Code also applies settings of parent folders (a project often sits inside a bigger folder that holds .claude), so walk up (at most 6 levels, stop at the home folder)
+  const home = require('os').homedir();
+  let dir = root;
+  for (let i = 0; i < 6; i++) {
+    files.push({ file: path.join(dir, '.claude', 'settings.json'), scope: i ? 'parent' : 'project' }, { file: path.join(dir, '.claude', 'settings.local.json'), scope: i ? 'parent' : 'local' });
+    const up = path.dirname(dir); if (up === dir || up === home || dir === home) break; dir = up;
+  }
   const out = { project: root, files: [], rules: [], mode: null, dirs: [], hooks: [], problems: [] };
   for (const f of files) {
     if (!fs.existsSync(f.file)) continue;
