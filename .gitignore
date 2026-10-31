@@ -4,3 +4,4 @@ variants/
 *.png
 !docs/*.png
 !docs/*.mp4
+!icon.png
