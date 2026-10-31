@@ -2,7 +2,7 @@
 // score.js: compares the hook's tier with independent labels.
 // usage: node score.js  (reads corpus_real.json, corpus_synth.json, label_A.json, label_B.json)
 const fs = require('fs'), path = require('path');
-const { decide } = require('../hook/permission_hook.js');
+const { decide } = require('../../hook/permission_hook.js');
 const load = (f) => JSON.parse(fs.readFileSync(path.join(__dirname, f), 'utf8'));
 const sets = { real: load('corpus_real.json'), synth: load('corpus_synth.json') };
 const A = load('label_A.json'), B = load('label_B.json');

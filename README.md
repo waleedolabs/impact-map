@@ -1,68 +1,76 @@
-# Impact: keep the human in control of what an AI assistant builds and does
+# خريطة الأثر · Impact Map
 
-Two parts, one engine.
+**شو هي؟** أداة بتقرأ كود مشروعك (JavaScript / TypeScript / React / HTML) وبتطلّعلك صفحة وحدة فيها خريطتين:
+
+1. **خريطة المشروع:** أجزاء مشروعك وكيف مرتبطة ببعض. اضغط على أي جزء، واختر «تعديل» أو «حذف»، وشوف شو رح يتأثر **قبل** ما تلمس شي.
+2. **خريطة الصلاحيات:** (بستايل الهاكر) الصلاحيات الدائمة اللي سمحت فيها لـ Claude Code، وشو تفرّع عن كل وحدة، وأي أجزاء من مشروعك بتتأثر.
+
+كل شي بيشتغل على جهازك. ما بيتصل بالإنترنت وما بيرفع شي لأي مكان.
+
+## التشغيل
+
+بدك Node.js 18 أو أحدث. ما في شي تنزّله.
 
 ```
-analyzer/   fnmap.js, analyze.py   reads a project: functions, who calls whom, which request hits which server route
-map/        glitch-template.html   the interactive map: pick a part, choose edit or delete, see what is affected
-hook/       permission_hook.js     a Claude Code PreToolUse hook: green / yellow / red, plain Arabic reasons,
-                                   and, for edits to code, who depends on the function being changed
-tests/      corpora + scoring      real and independently written tool calls, labelled blind
+node impact.js مسار-مجلد-مشروعك
 ```
 
-## Approvals view: what you allowed, and how far it reaches
+بيطلع ملف `impact-map.html`، افتحه بأي متصفح. خيارات:
 
-`approvals/approvals.js` reads a project's `.claude/settings.json` / `settings.local.json` (and a user settings file if given)
-and says, in plain Arabic, what each standing permission can do at its worst, and what Claude can now do without asking.
-The map page has a second mode, "الصلاحيات" (hacker look: black background, neon green) with its OWN map:
-Claude in the centre, the permissions you allowed around it (grouped: files, commands, internet, external apps, agents, general mode, protections),
-and a tap on a permission makes it the centre of a new map showing what branches from it (what it can do) and which parts of your project
-that reaches (using what each part's own code does: NET, STO, KEY, AI, DB, CLIP, SND, SRV, found by scanning function lines and spot-checked by hand).
-Boxes are pushed apart automatically; every one of the 18 views of the example data was checked for overlaps (none).
-`examples/approvals-demo.json` is synthetic example data. First real run: one project's `.claude/settings.local.json` held a single
-saved permission (`Bash(npx shadcn@latest *)`) plus `enableAllProjectMcpServers: true`, both rated red/amber. One-time "Yes" clicks are not saved in settings,
-so this view cannot see them; it only shows standing permissions and settings.
+| الخيار | شو بيعمل |
+|---|---|
+| `--out ملف.html` | مكان الملف الناتج |
+| `--name "اسم"` | الاسم اللي بيظهر بالصفحة |
+| `--names names.json` | أسماء الأجزاء اللي بدك ياها (بدل التلقائية) |
+| `--user-settings ملف.json` | نسخة من إعدادات Claude Code الشخصية (لازم تعطيني نسخة بنفسك) |
+| `--json graph.json` | حفظ الخريطة الخام |
 
-Checked on 70 rules written by an independent agent and rated by two independent reviewers (tool frozen before rating):
-of 39 rules both reviewers called red, the first version flagged 33 and, after general fixes (same data, so not independent), 37.
-Remaining differences: bare `Edit`/`Write` (kept yellow), unknown programs (yellow, "unknown"), `rm -rf node_modules` and
-similar exact commands (red; reviewers yellow). Not done yet: running it on a real user's accumulated approvals, and "where it reached"
-from real activity (needs the hook's log or Claude Code transcripts).
+بالصفحة نفسها بتقدر تضغط «غيّر الاسم» لأي جزء، والاسم بينحفظ بمتصفحك.
 
-## Install the hook (Claude Code)
+## قد إيش هي دقيقة؟ (أرقام حقيقية، مع حدودها)
 
-`.claude/settings.json` in the project:
+- **الروابط بين الملفات:** على مشروع صغير بـ14 ملف، حذفنا كل ملف فعلياً وشغّلنا الباقي: انكسر 49 ملف، والخريطة ما فاتها ولا واحد. (بيقيس الكسر عند التحميل بس.)
+- **الروابط بين الدوال:** على لعبة حقيقية (112 دالة)، حذفنا 90 دالة وشغّلنا اللعبة بعد كل حذف. 62 حذف طلّع خطأ واضح، وكل أماكن الخطأ (77) كانت بدوال الخريطة متوقعتها. **28 حذف ما طلّع أي خطأ** (الخطأ بينبلع بصمت)، والخريطة بتبقى بتعرض مين بيعتمد عليها. طريقة العدّ انعدّلت بعد ما شفنا النتائج، فالرقم استرشادي.
+- **TypeScript وReact:** على مشروع React/TypeScript حقيقي (11 دالة، 6 روابط)، الروابط طابقت الاستيراد الفعلي (راجعناها بالقراءة).
+- **التقسيم التلقائي لأجزاء:** بيطابق تقسيماً يدوياً كتبناه للعبة بنسبة 0.63 من 1 (التقسيم حسب الملفات بس بيعطي 0.23). **الأسماء التلقائية بتطلع أحياناً رديئة**، وهاد سبب وجود زر «غيّر الاسم».
+- **تصنيف خطر الصلاحيات:** على 70 صلاحية كتبها وكيل مستقل وحكم عليها وكيلين مستقلين، الأداة لقطت 33 من 39 صلاحية خطرة بأول مرة، و37 بعد تصحيحات عامة (على نفس الأمثلة، فمو اختبار مستقل).
 
-```json
-{ "hooks": { "PreToolUse": [ { "matcher": ".*", "hooks": [ { "type": "command", "command": "node /path/to/impact/hook/permission_hook.js" } ] } ] } }
+## القيود (اقرأها)
+
+- **اللغات:** JavaScript وTypeScript (بشرط حزمة `typescript` بالمشروع) وReact وHTML. Python وJava وKotlin وغيرها لسا لا.
+- **الخريطة تقدير مبني على قراءة الكود، مو ضمان.** الكود اللي بيتحمّل بطريقة ديناميكية أو بأسماء متغيرة ممكن تفوتنا روابطه، والصفحة بتنبّه لما بتلاحظ هيك.
+- **الصلاحيات:** الأداة بتشوف **الصلاحيات الدائمة** المحفوظة بملفات إعدادات Claude Code بس (`.claude/settings.json` و`settings.local.json`). الموافقات اللي بتضغط عليها «نعم» مرة وحدة **ما بتنحفظ**، فما بنشوفها. وملف إعداداتك الشخصي العام محمي من Claude نفسه: انسخه بإيدك وأعطيه لـ `--user-settings` إذا بدك.
+- **ما انجرّب مع ناس حقيقيين بعد.** لا نعرف إذا الصفحة بتخلّي الشخص العادي يفهم أكتر.
+- مشاريع كبيرة جداً (أكتر من 1500 ملف) بتنقطع، والصفحة بتبيّن هالشي.
+
+## تجريبي: الحارس
+
+`hook/permission_hook.js` سكربت بيصنّف أوامر Claude Code قبل تنفيذها (آمن / بحذر / خطر) وبيسأل بجملة بسيطة. **تجريبي**: ما اتجرّب جوا جلسة Claude Code حقيقية، وبينشر منه تصنيف الصلاحيات المستعمل هون. التفاصيل والأرقام بـ`research/`.
+
+## بالتطوير
+
+```
+node tests/selftest.js
 ```
 
-- green  -> allowed silently
-- yellow -> allowed, written to `.impact/activity.jsonl`
-- red    -> Claude Code asks, with a plain sentence such as "رح يمسح 24 ملف (1.2 MB) من build. ما في تراجع"
+المحلّلات الجاهزة (acorn وacorn-jsx، ترخيص MIT) موجودة بمجلد `vendor/` عشان ما تحتاج تنزّل شي.
 
-## What was measured (and what was not)
+---
 
-Hold-out set: 60 tool calls written by an independent agent for a normal working day, labelled by two
-independent reviewers (one cautious, one pragmatic), hook frozen (md5 in tests/hook_frozen.md5) before the set existed.
+## English summary
 
-- both reviewers said red: 10, hook asked on 10. Either said red: 14, hook asked on 14.
-- unnecessary interrupts: 2 of 46 calls neither reviewer called red (both `npx eslint` / `npx jest`).
-- hook interrupts 27% of calls; reviewers 23% and 17%.
-- On the first, tuned-on data: 2 of 29 red calls were let through (a bare `> file` truncation, and spawning a sub-agent).
+Impact Map reads a JavaScript / TypeScript / React / HTML project and builds one self-contained HTML page with two maps:
+(1) a map of the project's parts and what depends on what, with an edit / delete preview before you touch anything;
+(2) a map of the standing permissions you gave Claude Code, what branches from each, and which parts of your project they reach.
+Everything runs locally. No network, nothing uploaded.
 
-Not measured: running inside a real Claude Code session (authentication failed in the test sandbox), edits with
-function-impact lookups on real projects, MCP tools beyond 3 cases, anything with real users.
-The reviewers are the same model family as the author of the hook, so shared blind spots are likely.
+```
+node impact.js path/to/your/project      # writes impact-map.html
+```
 
-## Change after the freeze
+Honest limits: JS/TS only; the map is an estimate from reading the code, not a guarantee; only *standing* permissions saved in Claude Code settings files are visible (one-time "Yes" clicks are not stored);
+automatic part names are often rough (rename them in the page); not tested with real users yet. Numbers above are from our own tests and were partly tuned on the same data.
 
-One change was made after the hook was frozen: secret-path matching now normalises Windows backslashes. Both score runs were repeated and gave identical numbers (92-call set 75/92, hold-out 10/10 and 14/14, 2 unnecessary interrupts). The md5 in tests/hook_frozen.md5 is the pre-change file.
+## License
 
-## Known gaps
-
-- `npx` is always red, even when the tool is already in node_modules/.bin.
-- Scripts that delete files (even their own temp folders) are red: the hook cannot tell where.
-- MCP tools are judged by name only; a per-user allow-list is the real fix.
-- Chained shell tricks beyond the cases tested (aliases, functions, `eval` of built strings) are only caught as "unknown -> red".
-- The message shown is plain text in Claude Code's own prompt; no custom screen.
+MIT (see LICENSE). Bundled parsers: acorn and acorn-jsx, MIT, in `vendor/`.

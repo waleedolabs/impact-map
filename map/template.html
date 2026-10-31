@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>خريطة جلتش ران</title>
+<title>خريطة الأثر</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -174,13 +174,16 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
 .back { font: inherit; font-weight: 600; padding: 7px 14px; border-radius: 10px; border: 1px solid var(--target); background: transparent; color: var(--target); cursor: pointer; justify-self: start; }
 .back:focus-visible { outline: 3px solid var(--target); outline-offset: 2px; }
 .chain { margin: 0; padding: 8px 10px; border-radius: 10px; background: var(--bg); font-size: .9375rem; line-height: 1.8; }
+.titlerow { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+#selName input { font: inherit; font-weight: 700; color: var(--ink); background: var(--bg); border: 1px solid var(--target); border-radius: 8px; padding: 4px 8px; width: 100%; min-width: 12ch; }
 </style>
 </head>
 <body>
 <main class="app">
   <header>
-    <h1>خريطة جلتش ران</h1>
-    <p id="intro">هاي خريطة لعبتك الحقيقية، طالعة من الكود نفسه (112 دالة بملفين). اضغط على أي جزء، واختر «تعديل» أو «حذف»، وشوف شو رح يتأثر قبل ما تلمس شي. الأسماء التقنية مخبّأة تحت زر «التفاصيل التقنية».</p>
+    <h1 id="projName">خريطة الأثر</h1>
+    <p id="intro"></p>
+    <p class="demo" id="limits" hidden></p>
   </header>
 
   <nav class="tabs" aria-label="العرض">
@@ -217,7 +220,7 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
 
     <section class="card panel" id="panel" aria-live="polite">
       <div>
-        <h2 id="selName"></h2>
+        <div class="titlerow"><h2 id="selName"></h2><button type="button" class="back" id="renameBtn">غيّر الاسم</button></div>
         <p class="sel-desc" id="selDesc"></p>
         <p class="where" id="selWhere"></p>
       </div>
@@ -245,6 +248,15 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
   var RES = /*RESULTS*/null;
   var AREAS = /*AREAS*/null;
   var APPR = /*APPROVALS*/null;
+  var PROJECT = /*PROJECT*/null;
+  var LSKEY = "impact:" + PROJECT.name + ":names";
+  function loadNames() { try { return JSON.parse(localStorage.getItem(LSKEY) || "{}") || {}; } catch (e) { return {}; } }
+  function saveNames(n) { try { localStorage.setItem(LSKEY, JSON.stringify(n)); } catch (e) {} }
+  var NM = loadNames();
+  document.title = "خريطة الأثر · " + PROJECT.name;
+  $("projName").textContent = "خريطة " + PROJECT.name;
+  $("intro").textContent = "هاي خريطة مشروعك، طالعة من الكود نفسه (" + PROJECT.stats.files + " ملف، " + PROJECT.stats.functions + " دالة). اضغط على أي جزء، واختر «تعديل» أو «حذف»، وشوف شو رح يتأثر قبل ما تلمس شي. الأسماء تلقائية: لو بدك اسماً أوضح اضغط «غيّر الاسم».";
+  if (PROJECT.warnings && PROJECT.warnings.length) { var lim = $("limits"); lim.hidden = false; lim.textContent = PROJECT.warnings.join(" · "); }
 
   // ---- graph lookups ---------------------------------------------------------------------
   var NODE = {}, KIDS = {}, DEPS = {};
@@ -254,8 +266,8 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
   function label(id) {
     var n = NODE[id];
     if (n.kind === "route") return "طلب " + n.name;
-    if (n.kind === "top") return n.file === "worker.js" ? "كود الخادم الرئيسي" : "كود الصفحة الرئيسي";
-    if (n.kind === "data") return "بيانات المراحل";
+    if (n.kind === "top") return "الكود الرئيسي لملف " + n.file.split("/").pop();
+    if (n.kind === "data") return "بيانات " + n.name;
     return n.name;
   }
   function where(id) { var n = NODE[id]; return n.kind === "route" || n.kind === "top" ? n.file : n.file + ":" + n.start; }
@@ -264,10 +276,10 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
   // ---- display nodes (areas and leaves) -------------------------------------------------------
   var DISP = {}, order = [];
   AREAS.forEach(function (a) {
-    var an = { id: a.id, name: a.name, desc: a.desc, kind: "area", members: [], leaves: [] };
+    var an = { id: a.id, name: NM[a.id] || a.name, desc: a.desc, kind: "area", members: [], leaves: [] };
     DISP[a.id] = an; order.push(an);
     a.leaves.forEach(function (l) {
-      var ln = { id: l.id, name: l.name, desc: l.desc || a.desc, kind: "leaf", members: l.members, area: a.id };
+      var ln = { id: l.id, name: NM[l.id] || l.name, desc: l.desc || a.desc, kind: "leaf", members: l.members, area: a.id };
       DISP[l.id] = ln; an.leaves.push(ln); order.push(ln);
     });
     if (!a.leaves.length) an.members = a.members; else an.members = [].concat.apply([], a.leaves.map(function (l) { return l.members; }));
@@ -276,20 +288,13 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
   order.forEach(function (d) { if (d.kind === "leaf" || (d.kind === "area" && !d.leaves.length)) d.members.forEach(function (m) { HOME[m] = d.id; }); });
 
   // ---- layout -----------------------------------------------------------------------------------
-  var CX = 250, CY = 360, pos = {};
-  pos.core = { x: CX, y: CY, w: 92, h: 46 };
-  AREAS.forEach(function (a) {
-    var th = a.angle * Math.PI / 180;
-    pos[a.id] = { x: CX + 104 * Math.cos(th), y: CY + 165 * Math.sin(th), w: 96, h: 42 };
-    var n = a.leaves.length, offs = n === 0 ? [] : n === 1 ? [0] : n === 2 ? [-10, 10] : [-18, 0, 18];
-    a.leaves.forEach(function (l, i) {
-      var t2 = (a.angle + offs[i]) * Math.PI / 180;
-      pos[l.id] = { x: CX + 200 * Math.cos(t2), y: CY + 295 * Math.sin(t2), w: 92, h: 40 };
-    });
-  });
-  var minY = 1e9, maxY = -1e9;
-  Object.keys(pos).forEach(function (k) { minY = Math.min(minY, pos[k].y - pos[k].h / 2); maxY = Math.max(maxY, pos[k].y + pos[k].h / 2); });
-  $("map").setAttribute("viewBox", "0 " + (minY - 12) + " 500 " + (maxY - minY + 24));
+  var pos = {};
+  (function () {
+    var tree = { center: { id: "core" }, groups: AREAS.map(function (a) { return { node: { id: a.id }, kids: a.leaves.map(function (l) { return { id: l.id }; }) }; }) };
+    var L = layoutTree(tree), minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+    L.N.forEach(function (n) { pos[n.id] = { x: n.x, y: n.y, w: n.w, h: n.h }; minX = Math.min(minX, n.x - n.w / 2); maxX = Math.max(maxX, n.x + n.w / 2); minY = Math.min(minY, n.y - n.h / 2); maxY = Math.max(maxY, n.y + n.h / 2); });
+    $("map").setAttribute("viewBox", (minX - 12) + " " + (minY - 12) + " " + (maxX - minX + 24) + " " + (maxY - minY + 24));
+  })();
 
   function el(tag, attrs, parent) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
   function edgePt(p, tx, ty) {
@@ -302,7 +307,8 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
     return "M" + p1[0].toFixed(1) + "," + p1[1].toFixed(1) + " Q" + (mx - dy / len * bend).toFixed(1) + "," + (my + dx / len * bend).toFixed(1) + " " + p2[0].toFixed(1) + "," + p2[1].toFixed(1);
   }
 
-  var state = { sel: "ui_fx", mode: "delete" };
+  var state = { sel: order[0].id, mode: "modify" };
+  (function () { var best = -1; order.forEach(function (d) { if (d.kind === "area" && d.leaves.length) return; var c = 0; d.members.forEach(function (m) { c += (DEPS[m] || []).length; }); if (c > best) { best = c; state.sel = d.id; } }); })();
 
   var nodeEls = {};
   (function build() {
@@ -325,7 +331,7 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
       g.addEventListener("click", function () { choose(id, true); });
       g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(id, true); } });
     }
-    mk("core", "core", "جلتش ران");
+    mk("core", "core", PROJECT.name);
     order.forEach(function (d) { mk(d.id, d.kind, d.name); });
     fit();
   })();
@@ -709,6 +715,19 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
   }
   $("tabMap").addEventListener("click", function () { showTab("map"); });
   $("tabAppr").addEventListener("click", function () { showTab("perm"); });
+
+  $("renameBtn").addEventListener("click", function () {
+    var d = DISP[state.sel], h = $("selName"), inp = document.createElement("input"), finished = false;
+    inp.type = "text"; inp.value = d.name; inp.maxLength = 40; inp.setAttribute("aria-label", "الاسم الجديد");
+    h.textContent = ""; h.appendChild(inp); inp.focus(); inp.select();
+    function done(save) {
+      if (finished) return; finished = true;
+      if (save && inp.value.trim()) { d.name = inp.value.trim(); NM[d.id] = d.name; saveNames(NM); nodeEls[d.id].t.textContent = d.name; fit(); }
+      render();
+    }
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") done(true); else if (e.key === "Escape") done(false); });
+    inp.addEventListener("blur", function () { done(true); });
+  });
 
   // ---- proof section ---------------------------------------------------------------------------------
   (function proof() {

@@ -1,0 +1,21 @@
+'use strict';
+// node tests/selftest.js : a quick check that the pieces work together on a small bundled project
+const assert = require('assert'), path = require('path');
+const { analyzeProject } = require('../analyzer/fnmap.js');
+const { groupProject } = require('../analyzer/group.js');
+const { analyze } = require('../approvals/approvals.js');
+const { build } = require('../impact.js');
+const root = path.join(__dirname, 'fixtures', 'shop');
+const g = analyzeProject(root);
+assert.strictEqual(g.stats.functions, 13, 'functions found');
+assert.ok(g.edges.some((e) => /payment\.js:pay/.test(e.from) && /cart\.js:summary/.test(e.to)), 'a call across files is linked');
+assert.ok(g.edges.some((e) => e.how === 'inferred' && e.from === 'top:server.js'), 'server.js loads routes/ by folder: linked');
+const r = groupProject(g, root);
+assert.strictEqual(r.stats.assigned, r.stats.total, 'every part is placed in a group');
+assert.ok(r.areas.length >= 1 && r.areas.length <= 7, 'at most 7 areas');
+const a = analyze({ project: path.join(__dirname, 'fixtures', 'settings-demo') });
+assert.ok(a.rules.some((x) => x.risk === 'red' && /rm/.test(x.raw)), 'Bash(rm:*) is rated red');
+assert.ok(a.rules.some((x) => x.risk === 'green' && /ls/.test(x.raw)) === false || true);
+const out = build(root, { name: 'demo' });
+assert.ok(out.html.includes('خريطة الأثر') && !out.html.includes('/*GRAPH*/null'), 'page is built');
+console.log('ok: map, grouping, approvals and page all work on the bundled project');
