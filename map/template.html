@@ -8,37 +8,51 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-/* Idea: the project is a small night sky. Parts are bodies you can turn around; pressing one lights up what it pulls along with it.
-   The permissions view is the same sky seen through a terminal: green on black, signals travelling outward from Claude. */
+/* Same map shapes as before (boxes on a tree). New: polished surfaces, light and dark, zoom and drag. */
 :root {
-  --bg: #060913; --glass: rgba(13, 20, 40, .80); --glass-2: rgba(255, 255, 255, .045);
-  --line: rgba(160, 182, 255, .16); --ink: #e9eefc; --muted: #94a2c8; --accent: #7aa2ff;
-  --target: #5ec8ff;  --target-bg: rgba(94, 200, 255, .13);
-  --removed: #ff6272; --removed-bg: rgba(255, 98, 114, .13);
-  --direct: #ffb347;  --direct-bg: rgba(255, 179, 71, .13);
-  --indirect: #f1dc6a; --indirect-bg: rgba(241, 220, 106, .11);
-  --safe: #6fd3a8;    --safe-bg: rgba(111, 211, 168, .10);
+  --bg: #eef1f6; --glass: rgba(255,255,255,.88); --glass-2: rgba(25,45,90,.045);
+  --line: rgba(30,50,90,.16); --ink: #16202e; --muted: #58687e; --accent: #2d63d8;
+  --target: #1f5fbf;  --target-bg: rgba(31,95,191,.12);
+  --removed: #c62828; --removed-bg: rgba(198,40,40,.11);
+  --direct: #c2620a;  --direct-bg: rgba(194,98,10,.12);
+  --indirect: #8f7300; --indirect-bg: rgba(154,123,0,.12);
+  --safe: #2e7d4f;    --safe-bg: rgba(46,125,79,.11);
+  --node: #ffffff; --node-line: #c3cddb; --edge: #a9b6c9; --shadow: rgba(30,50,90,.16);
+  --stage: linear-gradient(180deg,#fbfcfe,#eef2f8); --dots: rgba(30,50,90,.13); --on: #ffffff;
+  --page: radial-gradient(1000px 500px at 80% -10%, rgba(80,120,255,.10), transparent 60%);
   --display: "Readex Pro", "IBM Plex Sans Arabic", system-ui, "Segoe UI", Tahoma, sans-serif;
   --font: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
-  color-scheme: dark;
+  color-scheme: light;
 }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0b1020; --glass:rgba(16,24,46,.82); --glass-2:rgba(255,255,255,.05); --line:rgba(160,182,255,.17); --ink:#e9eefc; --muted:#94a2c8; --accent:#7aa2ff;
+ --target:#5ec8ff; --target-bg:rgba(94,200,255,.14); --removed:#ff6272; --removed-bg:rgba(255,98,114,.14); --direct:#ffb347; --direct-bg:rgba(255,179,71,.14);
+ --indirect:#f1dc6a; --indirect-bg:rgba(241,220,106,.12); --safe:#6fd3a8; --safe-bg:rgba(111,211,168,.11);
+ --node:#141d38; --node-line:rgba(160,182,255,.30); --edge:rgba(150,172,255,.38); --shadow:rgba(0,0,0,.55);
+ --stage:radial-gradient(900px 520px at 50% 40%,#111b3a,#060913); --dots:rgba(160,182,255,.10); --on:#04101c;
+ --page:radial-gradient(1100px 600px at 70% -10%,rgba(80,110,255,.16),transparent 60%),radial-gradient(900px 500px at 0% 100%,rgba(120,70,255,.10),transparent 60%); color-scheme:dark; } }
+:root[data-theme="dark"] { --bg:#0b1020; --glass:rgba(16,24,46,.82); --glass-2:rgba(255,255,255,.05); --line:rgba(160,182,255,.17); --ink:#e9eefc; --muted:#94a2c8; --accent:#7aa2ff;
+ --target:#5ec8ff; --target-bg:rgba(94,200,255,.14); --removed:#ff6272; --removed-bg:rgba(255,98,114,.14); --direct:#ffb347; --direct-bg:rgba(255,179,71,.14);
+ --indirect:#f1dc6a; --indirect-bg:rgba(241,220,106,.12); --safe:#6fd3a8; --safe-bg:rgba(111,211,168,.11);
+ --node:#141d38; --node-line:rgba(160,182,255,.30); --edge:rgba(150,172,255,.38); --shadow:rgba(0,0,0,.55);
+ --stage:radial-gradient(900px 520px at 50% 40%,#111b3a,#060913); --dots:rgba(160,182,255,.10); --on:#04101c;
+ --page:radial-gradient(1100px 600px at 70% -10%,rgba(80,110,255,.16),transparent 60%),radial-gradient(900px 500px at 0% 100%,rgba(120,70,255,.10),transparent 60%); color-scheme:dark; }
 body.hack {
-  --bg: #010603; --glass: rgba(2, 16, 8, .84); --glass-2: rgba(57, 255, 20, .05);
-  --line: rgba(57, 255, 20, .24); --ink: #c4ffd6; --muted: #62c98c; --accent: #39ff14;
-  --target: #39ff14; --target-bg: rgba(57, 255, 20, .10);
-  --removed: #ff4d5e; --removed-bg: rgba(255, 77, 94, .12);
-  --direct: #ffb020; --direct-bg: rgba(255, 176, 32, .12);
-  --indirect: #d7e34a; --indirect-bg: rgba(215, 227, 74, .10);
-  --safe: #39ff14; --safe-bg: rgba(57, 255, 20, .08);
+  --bg: #010603; --glass: rgba(2,16,8,.86); --glass-2: rgba(57,255,20,.05);
+  --line: rgba(57,255,20,.26); --ink: #c4ffd6; --muted: #62c98c; --accent: #39ff14;
+  --target: #39ff14; --target-bg: rgba(57,255,20,.10);
+  --removed: #ff4d5e; --removed-bg: rgba(255,77,94,.12);
+  --direct: #ffb020; --direct-bg: rgba(255,176,32,.12);
+  --indirect: #d7e34a; --indirect-bg: rgba(215,227,74,.10);
+  --safe: #39ff14; --safe-bg: rgba(57,255,20,.08);
+  --node: #04110a; --node-line: #0f5a2c; --edge: #1c7a3f; --shadow: rgba(57,255,20,.35);
+  --stage: #000302; --dots: rgba(57,255,20,.10); --on: #02140a; --page: none;
   --display: "IBM Plex Mono", "IBM Plex Sans Arabic", ui-monospace, Consolas, monospace;
-  --font: "IBM Plex Mono", "IBM Plex Sans Arabic", ui-monospace, Consolas, monospace;
+  --font: "IBM Plex Mono", "IBM Plex Sans Arabic", ui-monospace, Consolas, monospace; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; }
-body { background: var(--bg); color: var(--ink); font-family: var(--font); line-height: 1.65; min-height: 100vh;
-  background-image: radial-gradient(1100px 600px at 70% -10%, rgba(80, 110, 255, .16), transparent 60%), radial-gradient(900px 500px at 0% 100%, rgba(120, 70, 255, .10), transparent 60%);
-  background-attachment: fixed; transition: background-color .5s; }
+body { background: var(--bg) var(--page); background-attachment: fixed; color: var(--ink); font-family: var(--font); line-height: 1.65; min-height: 100vh; }
 body.hack { background-image: linear-gradient(rgba(57, 255, 20, .045) 1px, transparent 1px), linear-gradient(90deg, rgba(57, 255, 20, .045) 1px, transparent 1px); background-size: 30px 30px; }
 body.hack::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 60; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, .15) 2px 3px); }
 .shell { max-width: 1500px; margin: 0 auto; padding: 14px clamp(12px, 2vw, 26px) 44px; display: grid; gap: 14px; }
@@ -61,11 +75,8 @@ body.hack .tabs button[aria-pressed="true"] { background: #39ff14; color: #02140
 .workspace { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1000px) { .workspace { grid-template-columns: minmax(0, 1.75fr) minmax(340px, .95fr); align-items: start; } }
 .left { display: grid; gap: 8px; min-width: 0; }
-.stage { position: relative; height: clamp(430px, 70vh, 780px); border-radius: 22px; overflow: hidden; border: 1px solid var(--line); background: #050811; isolation: isolate; box-shadow: 0 30px 80px -40px rgba(60, 90, 255, .55); }
-body.hack .stage { background: #000302; box-shadow: 0 0 0 1px rgba(57, 255, 20, .25), 0 0 60px -10px rgba(57, 255, 20, .35); }
-#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; outline: none; }
-#cv.grabbing { cursor: grabbing; } #cv.hot { cursor: pointer; }
-#cv:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; border-radius: 22px; }
+.stage { position: relative; height: clamp(440px, 72vh, 780px); border-radius: 22px; overflow: hidden; border: 1px solid var(--line); background: var(--stage); isolation: isolate; box-shadow: 0 24px 60px -36px var(--shadow); }
+body.hack .stage { box-shadow: 0 0 0 1px rgba(57,255,20,.25), 0 0 60px -10px rgba(57,255,20,.35); }
 .hud { position: absolute; z-index: 3; margin: 0; }
 .hud-legend { inset-inline-start: 14px; bottom: 14px; display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 8px 12px; list-style: none; border-radius: 12px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(10px); font-size: .78rem; color: var(--muted); max-width: calc(100% - 28px); }
 .hud-legend li { display: flex; align-items: center; gap: 7px; }
@@ -111,8 +122,8 @@ body.hack .panel h2 { color: #39ff14; text-shadow: 0 0 10px rgba(57, 255, 20, .4
 .back:focus-visible, .seg button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: var(--glass-2); border: 1px solid var(--line); }
 .seg button { font: inherit; font-weight: 600; padding: 9px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); cursor: pointer; }
-.seg button[aria-pressed="true"] { background: var(--target); color: #04101c; }
-.seg button#mDelete[aria-pressed="true"] { background: var(--removed); color: #1c0408; }
+.seg button[aria-pressed="true"] { background: var(--target); color: var(--on); }
+.seg button#mDelete[aria-pressed="true"] { background: var(--removed); color: #fff; }
 .summary { margin: 0; padding: 13px 15px; border-radius: 14px; background: var(--glass-2); border-inline-start: 4px solid var(--accent); font-size: 1rem; line-height: 1.85; font-weight: 500; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { padding: 3px 11px; border-radius: 999px; font-size: .8rem; font-weight: 600; border: 1px solid; }
@@ -154,6 +165,47 @@ details[open] summary { margin-bottom: 10px; }
 .big strong { display: block; font-family: var(--display); font-size: 1.6rem; font-variant-numeric: tabular-nums; line-height: 1.2; }
 .big span { color: var(--muted); font-size: .82rem; }
 #selName input { font: inherit; font-weight: 600; color: var(--ink); background: var(--glass-2); border: 1px solid var(--accent); border-radius: 8px; padding: 4px 8px; width: 100%; min-width: 12ch; }
+
+/* ---- the map itself (SVG, same shapes as the first version) ---- */
+.stage svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+.stage svg.grabbing { cursor: grabbing; }
+.stage::before { content: ""; position: absolute; inset: 0; z-index: 0; background-image: radial-gradient(var(--dots) 1px, transparent 1px); background-size: 24px 24px; pointer-events: none; }
+.stage svg, .hud { z-index: 1; }
+.node { cursor: pointer; outline: none; }
+.node rect.box { fill: var(--node); stroke: var(--node-line); stroke-width: 1.4; filter: drop-shadow(0 3px 5px var(--shadow)); }
+.node text { fill: var(--ink); font-family: var(--font); font-weight: 500; pointer-events: none; }
+.node text.sub { font-size: 9.5px; font-weight: 600; opacity: .8; }
+.node.area rect.box { stroke-width: 1.8; }
+.node.area text.t { font-weight: 700; }
+.node.core rect.box { fill: var(--ink); stroke: var(--ink); }
+.node.core text { fill: var(--bg); font-weight: 700; }
+body.hack .node.core rect.box { fill: #06260f; stroke: #39ff14; filter: drop-shadow(0 0 8px rgba(57,255,20,.7)); }
+body.hack .node.core text { fill: #39ff14; }
+.node.st-safe rect.box { fill: color-mix(in srgb, var(--safe) 13%, var(--node)); stroke: var(--safe); }
+.node.st-target rect.box { fill: color-mix(in srgb, var(--target) 20%, var(--node)); stroke: var(--target); stroke-width: 2.6; filter: drop-shadow(0 0 7px var(--target)); }
+.node.st-removed rect.box { fill: color-mix(in srgb, var(--removed) 20%, var(--node)); stroke: var(--removed); stroke-width: 2.6; filter: drop-shadow(0 0 7px var(--removed)); }
+.node.st-direct rect.box { fill: color-mix(in srgb, var(--direct) 20%, var(--node)); stroke: var(--direct); stroke-width: 2.2; filter: drop-shadow(0 0 5px var(--direct)); }
+.node.st-indirect rect.box { fill: color-mix(in srgb, var(--indirect) 18%, var(--node)); stroke: var(--indirect); stroke-width: 2; stroke-dasharray: 4 3; }
+.node.pm-ok rect.box { fill: color-mix(in srgb, var(--safe) 13%, var(--node)); stroke: var(--safe); filter: drop-shadow(0 0 4px rgba(57,255,20,.55)); }
+.node.pm-watch rect.box { fill: color-mix(in srgb, var(--direct) 16%, var(--node)); stroke: var(--direct); stroke-width: 2; filter: drop-shadow(0 0 5px rgba(255,176,32,.6)); }
+.node.pm-danger rect.box { fill: color-mix(in srgb, var(--removed) 18%, var(--node)); stroke: var(--removed); stroke-width: 2.4; filter: drop-shadow(0 0 7px rgba(255,77,94,.75)); }
+.node rect.ring { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-dasharray: 5 4; opacity: 0; }
+.node.sel rect.ring { opacity: 1; }
+.node:focus-visible rect.ring { opacity: 1; stroke-dasharray: none; stroke-width: 3; }
+.node:hover rect.box { stroke-width: 2.4; }
+.badge circle { stroke: var(--node); stroke-width: 1.5; }
+.badge text { fill: #fff; font-size: 10px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.b-removed circle { fill: var(--removed); } .b-direct circle { fill: var(--direct); } .b-indirect circle { fill: var(--indirect); } .b-target circle { fill: var(--target); } .b-safe circle { fill: var(--safe); }
+.tree-edge { fill: none; stroke: var(--edge); stroke-width: 1.8; stroke-linecap: round; }
+body.hack .tree-edge { filter: drop-shadow(0 0 2px rgba(57,255,20,.6)); }
+.flow-edge { fill: none; stroke: var(--direct); stroke-width: 2; stroke-dasharray: 6 5; opacity: .9; }
+body.hack .flow-edge { stroke: #39ff14; }
+#arrowhead path { fill: var(--direct); }
+@media (prefers-reduced-motion: no-preference) {
+  .flow-edge { animation: dash 1s linear infinite; } @keyframes dash { to { stroke-dashoffset: -22; } }
+  .node rect.box { transition: fill .2s, stroke .2s; }
+}
+.hud-tools .theme { font-size: 1rem; }
 </style>
 </head>
 <body>
@@ -172,11 +224,15 @@ details[open] summary { margin-bottom: 10px; }
 
   <main class="workspace">
     <div class="left">
-      <section class="stage" id="stage" aria-label="الخريطة ثلاثية الأبعاد">
-        <canvas id="cv" tabindex="0" role="application" aria-label="خريطة ثلاثية الأبعاد. الأسهم تدوّر، زائد وناقص للتقريب. للتنقل بين الأجزاء استخدم القائمة تحت الخريطة."></canvas>
-        <p class="hud hud-hint" id="hint">اسحب للتدوير · عجلة الماوس للتقريب · اضغط على أي جزء</p>
+      <section class="stage" id="stage" aria-label="الخريطة">
+        <svg id="map" role="group" aria-label="خريطة أجزاء المشروع">
+          <defs><marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z"></path></marker></defs>
+          <g id="treeLayer"></g><g id="flowLayer"></g><g id="nodeLayer"></g>
+        </svg>
+        <svg id="permMap" role="group" aria-label="خريطة الصلاحيات" hidden></svg>
+        <p class="hud hud-hint" id="hint">اسحب لتحريك الخريطة · عجلة الماوس للتقريب · اضغط على أي جزء</p>
         <div class="hud hud-tools" role="group" aria-label="أدوات العرض">
-          <button type="button" id="bSpin" aria-pressed="true" title="دوران تلقائي" aria-label="دوران تلقائي">&#10227;</button>
+          <button type="button" id="bTheme" class="theme" title="فاتح / داكن" aria-label="تبديل الوضع الفاتح والداكن"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 2a7 7 0 0 1 0 14z" fill="currentColor"/></svg></button>
           <button type="button" id="bIn" title="تقريب" aria-label="تقريب">+</button>
           <button type="button" id="bOut" title="تبعيد" aria-label="تبعيد">&minus;</button>
           <button type="button" id="bReset" title="إعادة الزاوية" aria-label="إعادة الزاوية">&#9678;</button>
@@ -220,6 +276,7 @@ details[open] summary { margin-bottom: 10px; }
 
 <script>
 (function () {
+  var NS = "http://www.w3.org/2000/svg";
   var $ = function (id) { return document.getElementById(id); };
   var G = /*GRAPH*/null;
   var RES = /*RESULTS*/null;
@@ -232,11 +289,10 @@ details[open] summary { margin-bottom: 10px; }
   var NM = loadNames();
   document.title = "خريطة الأثر · " + PROJECT.name;
   $("projName").textContent = "خريطة " + PROJECT.name;
-  var MAP_INTRO = PROJECT.stats.files + " ملف و" + PROJECT.stats.functions + " دالة، مرسومة من الكود نفسه. دوّر الخريطة، اضغط أي جزء، واختر «تعديل» أو «حذف» لتشوف شو رح يتأثر قبل ما تلمس شي.";
-  $("intro").textContent = MAP_INTRO;
+  $("intro").textContent = PROJECT.stats.files + " ملف و" + PROJECT.stats.functions + " دالة، مرسومة من الكود نفسه. اضغط أي جزء، واختر «تعديل» أو «حذف» لتشوف شو رح يتأثر قبل ما تلمس شي.";
   if (PROJECT.warnings && PROJECT.warnings.length) { var lim = $("limits"); lim.hidden = false; lim.textContent = PROJECT.warnings.join(" · "); }
 
-  // ---- graph lookups ----------------------------------------------------------------------------
+  // ---- graph lookups ---------------------------------------------------------------------
   var NODE = {}, KIDS = {}, DEPS = {};
   G.nodes.forEach(function (n) { NODE[n.id] = n; if (n.parent) (KIDS[n.parent] = KIDS[n.parent] || []).push(n.id); });
   G.edges.forEach(function (e) { (DEPS[e.to] = DEPS[e.to] || []).push(e); });
@@ -251,7 +307,7 @@ details[open] summary { margin-bottom: 10px; }
   function where(id) { var n = NODE[id]; return n.kind === "route" || n.kind === "top" ? n.file : n.file + ":" + n.start; }
   var HOW = { calls: "يستدعي", passes: "يمرّر", uses: "يقرأ", network: "يرسل طلباً إلى" };
 
-  // ---- display nodes (areas and leaves) ---------------------------------------------------------
+  // ---- display nodes (areas and leaves) -------------------------------------------------------
   var DISP = {}, order = [];
   AREAS.forEach(function (a) {
     var an = { id: a.id, name: NM[a.id] || a.name, desc: a.desc, kind: "area", members: [], leaves: [] };
@@ -262,288 +318,67 @@ details[open] summary { margin-bottom: 10px; }
     });
     if (!a.leaves.length) an.members = a.members; else an.members = [].concat.apply([], a.leaves.map(function (l) { return l.members; }));
   });
-  var HOME = {};
+  var HOME = {};   // node id -> the display node that shows it
   order.forEach(function (d) { if (d.kind === "leaf" || (d.kind === "area" && !d.leaves.length)) d.members.forEach(function (m) { HOME[m] = d.id; }); });
-  var UNITS = order.filter(function (g) { return g.kind === "leaf" || (g.kind === "area" && !g.leaves.length); });
-  function unitName(u) { return u.kind === "leaf" ? u.name + " · " + DISP[u.area].name : u.name; }
 
-  // =================================================================================================
-  //  3D stage: a small hand-written renderer (no libraries). Perspective projection, drag to turn,
-  //  wheel/pinch to zoom, depth fade, labels that avoid each other.
-  // =================================================================================================
-  var Stage = (function () {
-    var cv = $("cv"), ctx = cv.getContext("2d"), stageEl = $("stage");
-    var reduce = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
-    var W = 0, H = 0, DPR = 1, F = 1700;
-    var V = { yaw: .6, pitch: -.3, zoom: 1, vy: 0, vp: 0 }, focus = null, auto = !reduce, dragging = false, lastAct = 0, dirty = true;
-    var scene = { nodes: [], edges: [], flows: [] }, theme = "map", extent = 300, dust = [], P = {}, hover = null, onPick = function () {};
-    var FONT = { map: '"Readex Pro","IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif', hack: '"IBM Plex Mono","IBM Plex Sans Arabic",Consolas,monospace' };
-    var PAL = {
-      map: { bgIn: "#121d3d", bgOut: "#04060f", edge: "150,172,255", ring: "122,146,255", dust: "196,210,255", ink: "#eef2ff", pill: "rgba(5,8,18,.78)", pillLine: "rgba(160,182,255,.25)",
-        col: { core: "#ffe2a0", target: "#5ec8ff", removed: "#ff6272", direct: "#ffb347", indirect: "#f1dc6a", safe: "#6fd3a8" }, flow: "#ffb347" },
-      hack: { bgIn: "#04180b", bgOut: "#000201", edge: "57,255,20", ring: "57,255,20", dust: "120,255,140", ink: "#c9ffd9", pill: "rgba(0,8,3,.86)", pillLine: "rgba(57,255,20,.4)",
-        col: { core: "#39ff14", ok: "#39ff14", watch: "#ffb020", danger: "#ff4d5e" }, flow: "#39ff14" }
-    };
-    function hex(c) { var n = parseInt(c.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
-    function rgba(c, a) { var h = hex(c); return "rgba(" + h[0] + "," + h[1] + "," + h[2] + "," + a + ")"; }
-    function mix(c, t, k) { var h = hex(c); return "rgb(" + h.map(function (v, i) { return Math.round(v + (t[i] - v) * k); }).join(",") + ")"; }
-    function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
-    function angDiff(a, b) { return ((a - b + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; }
-    function mark() { dirty = true; if (reduce) requestAnimationFrame(frame); }
-
-    function resize() {
-      var r = stageEl.getBoundingClientRect(); DPR = Math.min(window.devicePixelRatio || 1, 2);
-      W = Math.max(200, r.width); H = Math.max(200, r.height);
-      cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); mark();
-    }
-    if (window.ResizeObserver) new ResizeObserver(resize).observe(stageEl); else window.addEventListener("resize", resize);
-
-    function setScene(s, th, keepView) {
-      scene = s; theme = th; hover = null;
-      extent = 120; s.nodes.forEach(function (n) { extent = Math.max(extent, Math.sqrt(n.x * n.x + n.y * n.y + n.z * n.z) + n.r + 24); });
-      var seed = 7; function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
-      dust = []; for (var i = 0; i < 150; i++) { var u = rnd() * 2 - 1, p = rnd() * Math.PI * 2, rr = extent * (.7 + rnd() * 1.1), q = Math.sqrt(1 - u * u); dust.push({ x: rr * q * Math.cos(p), y: rr * u * .8, z: rr * q * Math.sin(p), a: .15 + rnd() * .5, s: .6 + rnd() * 1.3 }); }
-      if (!keepView) { V.yaw = .6; V.pitch = -.3; V.zoom = 1; V.vy = V.vp = 0; focus = null; }
-      mark();
-    }
-    function setFlows(list) { scene.flows = list; mark(); }
-
-    function proj(x, y, z) {
-      var cy = Math.cos(V.yaw), sy = Math.sin(V.yaw), cp = Math.cos(V.pitch), sp = Math.sin(V.pitch);
-      var x1 = x * cy + z * sy, z1 = -x * sy + z * cy, y2 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
-      var k = .5 * Math.min(W, H) / (extent * 1.12) * V.zoom, s = F / (F + z2);
-      return { x: W / 2 + x1 * s * k, y: H / 2 + y2 * s * k, z: z2, s: s, k: k, da: clamp(1 - (z2 + extent) / (2 * extent) * .62, .38, 1) };
-    }
-    function ringPts(R, tilt, n) {
-      var out = [], ct = Math.cos(tilt), st = Math.sin(tilt);
-      for (var i = 0; i <= n; i++) { var a = i / n * Math.PI * 2, x = R * Math.cos(a), z = R * Math.sin(a); out.push(proj(x, -z * st, z * ct)); }
-      return out;
-    }
-    function polyline(pts, alphaFn, rgb, lw) {
-      for (var i = 1; i < pts.length; i++) {
-        ctx.strokeStyle = "rgba(" + rgb + "," + alphaFn((pts[i - 1].da + pts[i].da) / 2) + ")"; ctx.lineWidth = lw;
-        ctx.beginPath(); ctx.moveTo(pts[i - 1].x, pts[i - 1].y); ctx.lineTo(pts[i].x, pts[i].y); ctx.stroke();
-      }
-    }
-    function colorOf(n) { var c = PAL[theme].col; return c[n.state] || c.core; }
-    function stateStyle(n) { // how loud a node is
-      var st = n.state;
-      if (theme === "map") return st === "safe" ? { a: .78, glow: .22 } : st === "core" ? { a: 1, glow: .55 } : { a: 1, glow: .6 };
-      return st === "ok" ? { a: .85, glow: .3 } : { a: 1, glow: .6 };
-    }
-
-    function frame(now) {
-      if (!running && !reduce) return;
-      var dt = Math.min(48, now - (frame.t || now)); frame.t = now;
-      if (focus) {
-        V.yaw += angDiff(focus.yaw, V.yaw) * .13; V.pitch += (focus.pitch - V.pitch) * .13;
-        if (focus.zoom) V.zoom += (focus.zoom - V.zoom) * .13;
-        if (Math.abs(angDiff(focus.yaw, V.yaw)) < .004 && Math.abs(focus.pitch - V.pitch) < .004) focus = null; dirty = true;
-      } else if (!dragging) {
-        if (Math.abs(V.vy) > 1e-4 || Math.abs(V.vp) > 1e-4) { V.yaw += V.vy; V.pitch = clamp(V.pitch + V.vp, -1.25, 1.25); V.vy *= .93; V.vp *= .93; dirty = true; }
-        else if (auto && now - lastAct > 2600) { V.yaw += .00016 * dt; dirty = true; }
-      }
-      if (reduce && !dirty) return;
-      draw(now); dirty = false;
-      if (!reduce) requestAnimationFrame(frame);
-    }
-    var running = false;
-    function start() { if (running) return; running = true; if (reduce) requestAnimationFrame(frame); else requestAnimationFrame(frame); }
-    document.addEventListener("visibilitychange", function () { if (!document.hidden) { frame.t = 0; if (!reduce && !running) { running = true; requestAnimationFrame(frame); } } });
-
-    function draw(now) {
-      var pal = PAL[theme], t = reduce ? 0 : now;
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-      var g = ctx.createRadialGradient(W * .5, H * .45, 10, W * .5, H * .5, Math.max(W, H) * .75);
-      g.addColorStop(0, pal.bgIn); g.addColorStop(1, pal.bgOut); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-      ctx.lineCap = "round";
-      // dust
-      for (var i = 0; i < dust.length; i++) { var d = dust[i], q = proj(d.x, d.y, d.z); ctx.fillStyle = "rgba(" + pal.dust + "," + (d.a * q.da * .8).toFixed(3) + ")"; ctx.fillRect(q.x, q.y, d.s, d.s); }
-      // rings (give the eye a floor)
-      polyline(ringPts(extent * .52, 0, 90), function (a) { return (a * .13).toFixed(3); }, pal.ring, 1);
-      polyline(ringPts(extent * .96, 0, 120), function (a) { return (a * .08).toFixed(3); }, pal.ring, 1);
-      polyline(ringPts(extent * .74, 1.15, 100), function (a) { return (a * .07).toFixed(3); }, pal.ring, 1);
-
-      P = {};
-      scene.nodes.forEach(function (n) { P[n.id] = proj(n.x, n.y, n.z); });
-      // tree edges
-      scene.edges.forEach(function (e, idx) {
-        var a = P[e[0].id], b = P[e[1].id]; if (!a || !b) return;
-        var da = (a.da + b.da) / 2, hot = theme === "hack";
-        if (hot) { ctx.strokeStyle = "rgba(" + pal.edge + "," + (da * .10).toFixed(3) + ")"; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
-        ctx.strokeStyle = "rgba(" + pal.edge + "," + (da * (hot ? .55 : .30)).toFixed(3) + ")"; ctx.lineWidth = hot ? 1.2 : 1.1;
-        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-        if (hot) { // signals travelling outward: how far a permission reaches
-          var ph = reduce ? .6 : ((t * .00028 + idx * .173) % 1), px = a.x + (b.x - a.x) * ph, py = a.y + (b.y - a.y) * ph, c = colorOf(e[1]);
-          ctx.fillStyle = rgba(c, .95 * da); ctx.beginPath(); ctx.arc(px, py, 2.4 * a.s, 0, 6.3); ctx.fill();
-          ctx.fillStyle = rgba(c, .18 * da); ctx.beginPath(); ctx.arc(px, py, 7 * a.s, 0, 6.3); ctx.fill();
-        }
-      });
-      // impact arcs
-      scene.flows.forEach(function (f, fi) {
-        var A = scene.byId && scene.byId[f.a], B = scene.byId && scene.byId[f.b]; if (!A || !B) return;
-        var mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2, mz = (A.z + B.z) / 2, ml = Math.sqrt(mx * mx + my * my + mz * mz) || 1;
-        var len = Math.sqrt(Math.pow(A.x - B.x, 2) + Math.pow(A.y - B.y, 2) + Math.pow(A.z - B.z, 2)), lift = len * .38 / ml;
-        var cx = mx + mx * lift, cy = my + my * lift - len * .12, cz = mz + mz * lift, pts = [];
-        for (var s = 0; s <= 24; s++) { var u = s / 24, w1 = (1 - u) * (1 - u), w2 = 2 * u * (1 - u), w3 = u * u; pts.push(proj(w1 * A.x + w2 * cx + w3 * B.x, w1 * A.y + w2 * cy + w3 * B.y, w1 * A.z + w2 * cz + w3 * B.z)); }
-        var col = pal.flow, da = (pts[0].da + pts[24].da) / 2;
-        ctx.save(); ctx.setLineDash([7, 6]); ctx.lineDashOffset = reduce ? 0 : -t * .02; ctx.strokeStyle = rgba(col, .85 * da); ctx.lineWidth = 1.8;
-        ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y); for (var k = 1; k < pts.length; k++) ctx.lineTo(pts[k].x, pts[k].y); ctx.stroke(); ctx.restore();
-        var e1 = pts[24], e0 = pts[22], ang = Math.atan2(e1.y - e0.y, e1.x - e0.x);
-        ctx.fillStyle = rgba(col, .95 * da); ctx.beginPath(); ctx.moveTo(e1.x, e1.y); ctx.lineTo(e1.x - 9 * Math.cos(ang - .45), e1.y - 9 * Math.sin(ang - .45)); ctx.lineTo(e1.x - 9 * Math.cos(ang + .45), e1.y - 9 * Math.sin(ang + .45)); ctx.closePath(); ctx.fill();
-        var ph = reduce ? .5 : ((t * .00035 + fi * .21) % 1), pp = pts[Math.min(24, Math.floor(ph * 24))];
-        ctx.fillStyle = rgba(col, .95); ctx.beginPath(); ctx.arc(pp.x, pp.y, 3, 0, 6.3); ctx.fill();
-      });
-      // nodes, far to near
-      var list = scene.nodes.slice().sort(function (a, b) { return P[b.id].z - P[a.id].z; });
-      list.forEach(function (n) {
-        var p = P[n.id], c = colorOf(n), st = stateStyle(n), r = Math.max(4, n.r * p.s * p.k), a = st.a * p.da;
-        var glow = ctx.createRadialGradient(p.x, p.y, r * .4, p.x, p.y, r * 3.2);
-        glow.addColorStop(0, rgba(c, st.glow * p.da)); glow.addColorStop(1, rgba(c, 0));
-        ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(p.x, p.y, r * 3.2, 0, 6.3); ctx.fill();
-        var body = ctx.createRadialGradient(p.x - r * .38, p.y - r * .42, r * .1, p.x, p.y, r);
-        body.addColorStop(0, mix(c, [255, 255, 255], .75)); body.addColorStop(.45, c); body.addColorStop(1, mix(c, [0, 0, 0], .62));
-        ctx.globalAlpha = a; ctx.fillStyle = body; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 6.3); ctx.fill(); ctx.globalAlpha = 1;
-        if (n.state === "indirect") { ctx.save(); ctx.setLineDash([3, 3]); ctx.strokeStyle = rgba(c, .9 * p.da); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(p.x, p.y, r + 5, 0, 6.3); ctx.stroke(); ctx.restore(); }
-        if (n.state === "target" || n.state === "removed" || n.state === "danger") { // soft pulse
-          var pu = reduce ? .5 : (Math.sin(t * .004 + n.x) * .5 + .5);
-          ctx.strokeStyle = rgba(c, (.25 + .35 * pu) * p.da); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(p.x, p.y, r + 5 + pu * 5, 0, 6.3); ctx.stroke();
-        }
-        if (n.sel || n === hover) {
-          ctx.save(); ctx.setLineDash(n.sel ? [6, 5] : []); ctx.lineDashOffset = reduce ? 0 : -t * .03; ctx.strokeStyle = pal.ink; ctx.globalAlpha = n.sel ? .95 : .6; ctx.lineWidth = 1.7;
-          ctx.beginPath(); ctx.arc(p.x, p.y, r + 9, 0, 6.3); ctx.stroke(); ctx.restore();
-        }
-        if (n.kind === "core" || n.kind === "center") { ctx.strokeStyle = rgba(c, .35 * p.da); ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(p.x, p.y, r * 2.1, r * .75, -.35, 0, 6.3); ctx.stroke(); }
-      });
-      // labels: most important first, skip those that would sit on top of one already placed
-      ctx.direction = "rtl"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      var cand = scene.nodes.map(function (n) {
-        var pr = n.sel ? 1000 : (n === hover ? 950 : (n.kind === "core" || n.kind === "center") ? 900 : (n.state && n.state !== "safe" && n.state !== "ok") ? 600 : (n.kind === "area" || n.kind === "cat") ? 300 : 100 + P[n.id].da * 50);
-        return { n: n, pr: pr };
-      }).sort(function (a, b) { return b.pr - a.pr; });
-      var placed = [];
-      cand.forEach(function (c) {
-        var n = c.n, p = P[n.id], r = Math.max(4, n.r * p.s * p.k);
-        if (c.pr < 300 && p.da < .56) return;
-        var fs = Math.round((n.kind === "core" || n.kind === "center" ? 14.5 : (n.kind === "area" || n.kind === "cat") ? 13 : 11.5) * clamp(p.s, .88, 1.15));
-        ctx.font = "600 " + fs + "px " + FONT[theme];
-        var tw = ctx.measureText(n.label).width, two = c.pr >= 600 && n.sub, sw = 0;
-        if (two) { ctx.font = "500 " + (fs - 2) + "px " + FONT[theme]; sw = ctx.measureText(n.sub).width; }
-        var bw = Math.max(tw, sw) + 16, bh = two ? fs * 2 + 10 : fs + 9, bx = p.x - bw / 2, by = p.y + r + 6;
-        function free(x, y) { if (x < 4 || y < 4 || x + bw > W - 4 || y + bh > H - 4) return false; for (var i = 0; i < placed.length; i++) { var o = placed[i]; if (x < o[0] + o[2] + 3 && x + bw + 3 > o[0] && y < o[1] + o[3] + 3 && y + bh + 3 > o[1]) return false; } return true; }
-        var spots = [[bx, by], [bx, p.y - r - 6 - bh], [p.x + r + 8, p.y - bh / 2], [p.x - r - 8 - bw, p.y - bh / 2]], found = null;
-        for (var si = 0; si < (c.pr < 300 ? 2 : 4) && !found; si++) if (free(spots[si][0], spots[si][1])) found = spots[si];
-        if (!found) { if (c.pr < 600) return; found = spots[0]; }
-        bx = found[0]; by = found[1];
-        placed.push([bx, by, bw, bh]);
-        ctx.globalAlpha = clamp(p.da + .15, .5, 1); ctx.fillStyle = pal.pill; ctx.strokeStyle = pal.pillLine; ctx.lineWidth = 1;
-        ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 9); else ctx.rect(bx, by, bw, bh); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = pal.ink; ctx.font = "600 " + fs + "px " + FONT[theme]; ctx.fillText(n.label, bx + bw / 2, by + (two ? fs * .5 + 6 : bh / 2 + .5));
-        if (two) { ctx.fillStyle = rgba(colorOf(n), 1); ctx.font = "500 " + (fs - 2) + "px " + FONT[theme]; ctx.fillText(n.sub, bx + bw / 2, by + fs * 1.5 + 6); }
-        ctx.globalAlpha = 1;
-      });
-    }
-
-    // ---- interaction ----
-    var ptrs = {}, down = null, pinch = 0;
-    function local(e) { var r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
-    function pick(x, y) {
-      var best = null, bz = 1e9;
-      scene.nodes.forEach(function (n) { var p = P[n.id]; if (!p) return; var r = Math.max(4, n.r * p.s * p.k) + 7, dx = p.x - x, dy = p.y - y; if (dx * dx + dy * dy <= r * r && p.z < bz) { best = n; bz = p.z; } });
-      return best;
-    }
-    function act() { lastAct = performance.now(); $("hint").classList.add("gone"); }
-    cv.addEventListener("pointerdown", function (e) {
-      cv.setPointerCapture(e.pointerId); var l = local(e); ptrs[e.pointerId] = l; act(); focus = null; V.vy = V.vp = 0;
-      var ids = Object.keys(ptrs);
-      if (ids.length === 1) { down = { x: l.x, y: l.y, t: performance.now(), moved: 0 }; dragging = true; cv.classList.add("grabbing"); }
-      else if (ids.length === 2) { var a = ptrs[ids[0]], b = ptrs[ids[1]]; pinch = Math.hypot(a.x - b.x, a.y - b.y); down = null; }
-    });
-    cv.addEventListener("pointermove", function (e) {
-      var l = local(e), prev = ptrs[e.pointerId];
-      if (!prev) { var h = pick(l.x, l.y); if (h !== hover) { hover = h; cv.classList.toggle("hot", !!h); mark(); } return; }
-      ptrs[e.pointerId] = l; var ids = Object.keys(ptrs);
-      if (ids.length === 2) { var a = ptrs[ids[0]], b = ptrs[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) V.zoom = clamp(V.zoom * d / pinch, .5, 2.8); pinch = d; mark(); return; }
-      var dx = l.x - prev.x, dy = l.y - prev.y; if (down) down.moved += Math.abs(dx) + Math.abs(dy);
-      V.yaw += dx * .0065; V.pitch = clamp(V.pitch + dy * .0065, -1.25, 1.25); V.vy = dx * .0065; V.vp = dy * .0065; act(); mark();
-    });
-    function up(e) {
-      var wasDown = down; delete ptrs[e.pointerId]; pinch = 0;
-      if (!Object.keys(ptrs).length) { dragging = false; cv.classList.remove("grabbing"); }
-      if (wasDown && e.type === "pointerup" && wasDown.moved < 6 && performance.now() - wasDown.t < 500) { var l = local(e), n = pick(l.x, l.y); if (n) onPick(n); }
-      down = null; mark();
-    }
-    cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
-    cv.addEventListener("pointerleave", function () { if (hover) { hover = null; cv.classList.remove("hot"); mark(); } });
-    cv.addEventListener("wheel", function (e) { e.preventDefault(); act(); V.zoom = clamp(V.zoom * Math.exp(-e.deltaY * .0012), .5, 2.8); mark(); }, { passive: false });
-    cv.addEventListener("keydown", function (e) {
-      var k = e.key, used = true;
-      if (k === "ArrowLeft") V.yaw -= .12; else if (k === "ArrowRight") V.yaw += .12; else if (k === "ArrowUp") V.pitch = clamp(V.pitch - .1, -1.25, 1.25); else if (k === "ArrowDown") V.pitch = clamp(V.pitch + .1, -1.25, 1.25);
-      else if (k === "+" || k === "=") V.zoom = clamp(V.zoom * 1.15, .5, 2.8); else if (k === "-") V.zoom = clamp(V.zoom / 1.15, .5, 2.8); else used = false;
-      if (used) { e.preventDefault(); act(); mark(); }
-    });
-    $("bIn").addEventListener("click", function () { V.zoom = clamp(V.zoom * 1.25, .5, 2.8); act(); mark(); });
-    $("bOut").addEventListener("click", function () { V.zoom = clamp(V.zoom / 1.25, .5, 2.8); act(); mark(); });
-    $("bReset").addEventListener("click", function () { focus = { yaw: .6, pitch: -.3, zoom: 1 }; act(); mark(); });
-    $("bSpin").addEventListener("click", function () { auto = !auto; this.setAttribute("aria-pressed", String(auto)); lastAct = 0; mark(); });
-    if (reduce) { auto = false; $("bSpin").setAttribute("aria-pressed", "false"); }
-
-    function focusOn(id) {
-      var n = scene.byId && scene.byId[id]; if (!n) return;
-      var r = Math.sqrt(n.x * n.x + n.z * n.z); if (r < 2) return;
-      focus = { yaw: V.yaw + angDiff(Math.atan2(n.x, -n.z) + .55, V.yaw), pitch: clamp(Math.atan2(-n.y, r) * .8 - .12, -1.1, 1.1) }; lastAct = performance.now(); mark();
-    }
-    resize(); start();
-    return { setScene: setScene, setFlows: setFlows, focusOn: focusOn, mark: mark, set onPick(f) { onPick = f; } };
+  // ---- layout -----------------------------------------------------------------------------------
+  var pos = {};
+  (function () {
+    var tree = { center: { id: "core" }, groups: AREAS.map(function (a) { return { node: { id: a.id }, kids: a.leaves.map(function (l) { return { id: l.id }; }) }; }) };
+    var L = layoutTree(tree), minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+    L.N.forEach(function (n) { pos[n.id] = { x: n.x, y: n.y, w: n.w, h: n.h }; minX = Math.min(minX, n.x - n.w / 2); maxX = Math.max(maxX, n.x + n.w / 2); minY = Math.min(minY, n.y - n.h / 2); maxY = Math.max(maxY, n.y + n.h / 2); });
+    $("map").setAttribute("viewBox", (minX - 20) + " " + (minY - 54) + " " + (maxX - minX + 40) + " " + (maxY - minY + 124)); $("map")._vb0 = [minX - 20, minY - 54, maxX - minX + 40, maxY - minY + 124];
   })();
 
-  // ---- 3D layout: centre, groups on a sphere, their children fanned around each group -------------
-  function layout3d(tree) {
-    var N = [], E = [], c = tree.center; c.x = c.y = c.z = 0; c.fixed = true; N.push(c);
-    var n = tree.groups.length, R1 = Math.min(250, 150 + n * 12);
-    tree.groups.forEach(function (g, i) {
-      var y = n === 1 ? -.25 : (1 - 2 * (i + .5) / n) * .82, rad = Math.sqrt(Math.max(0, 1 - y * y)), phi = i * 2.399963 + .4;
-      var d = [Math.cos(phi) * rad, y, Math.sin(phi) * rad], o = g.node; o.x = d[0] * R1; o.y = d[1] * R1; o.z = d[2] * R1; N.push(o); E.push([c, o]);
-      var ref = Math.abs(d[1]) > .9 ? [1, 0, 0] : [0, 1, 0];
-      var u = [d[1] * ref[2] - d[2] * ref[1], d[2] * ref[0] - d[0] * ref[2], d[0] * ref[1] - d[1] * ref[0]], ul = Math.hypot(u[0], u[1], u[2]) || 1; u = u.map(function (v) { return v / ul; });
-      var v = [d[1] * u[2] - d[2] * u[1], d[2] * u[0] - d[0] * u[2], d[0] * u[1] - d[1] * u[0]];
-      var m = g.kids.length, spread = m === 1 ? 0 : Math.min(92, 34 + m * 11);
-      g.kids.forEach(function (k, j) {
-        var th = j / Math.max(1, m) * Math.PI * 2 + i * .8;
-        k.x = o.x + d[0] * 92 + (u[0] * Math.cos(th) + v[0] * Math.sin(th)) * spread;
-        k.y = o.y + d[1] * 92 + (u[1] * Math.cos(th) + v[1] * Math.sin(th)) * spread;
-        k.z = o.z + d[2] * 92 + (u[2] * Math.cos(th) + v[2] * Math.sin(th)) * spread;
-        N.push(k); E.push([o, k]);
-      });
-    });
-    for (var it = 0; it < 90; it++) {
-      var moved = false;
-      for (var a = 0; a < N.length; a++) for (var b = a + 1; b < N.length; b++) {
-        var A = N[a], B = N[b], dx = B.x - A.x, dy = B.y - A.y, dz = B.z - A.z, dist = Math.hypot(dx, dy, dz) || .01, min = A.r + B.r + 30;
-        if (dist < min) { moved = true; var push = (min - dist) / 2 / dist, fa = A.fixed ? 0 : (B.fixed ? 2 : 1), fb = B.fixed ? 0 : (A.fixed ? 2 : 1);
-          A.x -= dx * push * fa; A.y -= dy * push * fa; A.z -= dz * push * fa; B.x += dx * push * fb; B.y += dy * push * fb; B.z += dz * push * fb; }
-      }
-      if (!moved) break;
-    }
-    var byId = {}; N.forEach(function (x) { byId[x.id] = x; });
-    return { N: N, E: E, byId: byId };
+  function el(tag, attrs, parent) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+  function edgePt(p, tx, ty) {
+    var dx = tx - p.x, dy = ty - p.y, t = Math.min((p.w / 2) / Math.max(Math.abs(dx), 1e-6), (p.h / 2) / Math.max(Math.abs(dy), 1e-6));
+    return [p.x + dx * t, p.y + dy * t];
+  }
+  function curve(a, b, bend) {
+    var p1 = edgePt(pos[a], pos[b].x, pos[b].y), p2 = edgePt(pos[b], pos[a].x, pos[a].y);
+    var mx = (p1[0] + p2[0]) / 2, my = (p1[1] + p2[1]) / 2, dx = p2[0] - p1[0], dy = p2[1] - p1[1], len = Math.sqrt(dx * dx + dy * dy) || 1;
+    return "M" + p1[0].toFixed(1) + "," + p1[1].toFixed(1) + " Q" + (mx - dy / len * bend).toFixed(1) + "," + (my + dx / len * bend).toFixed(1) + " " + p2[0].toFixed(1) + "," + p2[1].toFixed(1);
   }
 
-  // ---- project map scene --------------------------------------------------------------------------
-  var MS = {}, mapScene;
-  (function () {
-    var tree = { center: { id: "core", kind: "core", label: PROJECT.name, sub: "", state: "core", r: 27 },
-      groups: AREAS.map(function (a) {
-        var ad = DISP[a.id];
-        return { node: { id: a.id, kind: "area", label: ad.name, sub: "", state: "safe", r: 14 + Math.min(10, Math.sqrt(ad.members.length) * 1.3) },
-          kids: a.leaves.map(function (l) { var ld = DISP[l.id]; return { id: l.id, kind: "leaf", label: ld.name, sub: "", state: "safe", r: 8 + Math.min(7, Math.sqrt(ld.members.length) * 1.0) }; }) };
-      }) };
-    var L = layout3d(tree); mapScene = { nodes: L.N, edges: L.E, flows: [], byId: L.byId }; MS = L.byId;
-  })();
-
-  // ---- impact ---------------------------------------------------------------------------------------
   var state = { sel: order[0].id, mode: "modify" };
   (function () { var best = -1; order.forEach(function (d) { if (d.kind === "area" && d.leaves.length) return; var c = 0; d.members.forEach(function (m) { c += (DEPS[m] || []).length; }); if (c > best) { best = c; state.sel = d.id; } }); })();
+
+  var nodeEls = {};
+  (function build() {
+    var tl = $("treeLayer"), nl = $("nodeLayer");
+    AREAS.forEach(function (a, i) {
+      el("path", { "class": "tree-edge", d: curve("core", a.id, i % 2 ? 8 : -8) }, tl);
+      a.leaves.forEach(function (l, j) { el("path", { "class": "tree-edge", d: curve(a.id, l.id, j % 2 ? 6 : -6) }, tl); });
+    });
+    function mk(id, cls, name) {
+      var p = pos[id];
+      var g = el("g", { "class": "node " + cls, tabindex: "0", role: "button", "data-id": id }, nl);
+      el("rect", { "class": "ring", x: p.x - p.w / 2 - 4, y: p.y - p.h / 2 - 4, width: p.w + 8, height: p.h + 8, rx: 13 }, g);
+      el("rect", { "class": "box", x: p.x - p.w / 2, y: p.y - p.h / 2, width: p.w, height: p.h, rx: 10 }, g);
+      var t = el("text", { "class": "t", x: p.x, y: p.y - 4, "text-anchor": "middle", "dominant-baseline": "central" }, g); t.textContent = name;
+      var s = el("text", { "class": "sub", x: p.x, y: p.y + 11, "text-anchor": "middle", "dominant-baseline": "central" }, g);
+      var b = el("g", { "class": "badge", visibility: "hidden" }, g);
+      el("circle", { cx: p.x + p.w / 2 - 3, cy: p.y - p.h / 2 + 3, r: 9 }, b);
+      var bt = el("text", { x: p.x + p.w / 2 - 3, y: p.y - p.h / 2 + 3 }, b);
+      nodeEls[id] = { g: g, t: t, s: s, badge: b, bt: bt };
+      g.addEventListener("click", function () { choose(id, true); });
+      g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(id, true); } });
+    }
+    mk("core", "core", PROJECT.name);
+    order.forEach(function (d) { mk(d.id, d.kind, d.name); });
+    fit();
+  })();
+  function fit() {
+    Object.keys(nodeEls).forEach(function (id) {
+      var t = nodeEls[id].t, base = id === "core" ? 14 : (DISP[id] && DISP[id].kind === "area" ? 12.5 : 11.5), w = 0;
+      t.setAttribute("font-size", base);
+      try { w = t.getComputedTextLength(); } catch (e) {}
+      if (w > pos[id].w - 12) t.setAttribute("font-size", (base * (pos[id].w - 12) / w).toFixed(2));
+    });
+  }
+
+  // ---- impact -----------------------------------------------------------------------------------
   function targetsOf(id) { return DISP[id].members; }
   function analyze(targets, mode) {
     var removed = {}, info = {}, queue = [];
@@ -564,6 +399,7 @@ details[open] summary { margin-bottom: 10px; }
     return "safe";
   }
   var TARGETSET = {};
+  function isTarget(id) { return !!TARGETSET[id]; }
   function groupState(d, res) {
     var worst = "safe", hit = 0;
     d.members.forEach(function (m) { var s = memberState(m, res); if (s !== "safe") hit++; if (RANK[s] > RANK[worst]) worst = s; });
@@ -573,9 +409,12 @@ details[open] summary { margin-bottom: 10px; }
     }
     return { state: worst, hit: hit, total: d.members.length };
   }
-  var STATUS = { target: "ستعدّله", removed: "سيُحذف", direct: "يتأثر مباشرة", indirect: "قد يتأثر", safe: "سليم" };
-  var STCOL = { target: "#5ec8ff", removed: "#ff6272", direct: "#ffb347", indirect: "#f1dc6a", safe: "#6fd3a8" };
 
+  var BADGE = { removed: ["✕", "b-removed"], target: ["✎", "b-target"], direct: ["!", "b-direct"], indirect: ["~", "b-indirect"], safe: ["✓", "b-safe"] };
+  var STATUS = { target: "ستعدّله", removed: "سيُحذف", direct: "يتأثر مباشرة", indirect: "قد يتأثر", safe: "سليم" };
+
+
+  var STCOL = { target: "var(--target)", removed: "var(--removed)", direct: "var(--direct)", indirect: "var(--indirect)", safe: "var(--safe)" };
   var pickBtns = {};
   (function buildStrip() {
     var st = $("strip");
@@ -585,27 +424,31 @@ details[open] summary { margin-bottom: 10px; }
       st.appendChild(b); pickBtns[d.id] = { b: b, i: i, s: s };
     });
   })();
-
   function paint(res) {
+    var fl = $("flowLayer"); while (fl.firstChild) fl.removeChild(fl.firstChild);
     order.forEach(function (d) {
-      var gs = groupState(d, res), n = MS[d.id], pb = pickBtns[d.id];
-      n.state = gs.state; n.label = d.name; n.sel = d.id === state.sel;
-      n.sub = gs.hit ? STATUS[gs.state] + " · " + gs.hit + " من " + gs.total : gs.total + " دالة";
+      var gs = groupState(d, res), ne = nodeEls[d.id], pb = pickBtns[d.id];
       pb.i.style.setProperty("--c", STCOL[gs.state]); pb.b.setAttribute("aria-pressed", d.id === state.sel ? "true" : "false");
-      pb.b.setAttribute("aria-label", d.name + ": " + STATUS[gs.state]);
+      ne.g.setAttribute("class", "node " + d.kind + " st-" + gs.state + (d.id === state.sel ? " sel" : ""));
+      ne.g.setAttribute("aria-pressed", d.id === state.sel ? "true" : "false");
+      ne.g.setAttribute("aria-label", d.name + ": " + STATUS[gs.state] + (gs.hit ? " (" + gs.hit + " من " + gs.total + " دالة)" : ""));
+      ne.s.textContent = gs.hit ? gs.hit + " من " + gs.total : gs.total + " دالة";
+      var bd = BADGE[gs.state]; ne.badge.setAttribute("class", "badge " + bd[1]); ne.badge.setAttribute("visibility", "visible"); ne.bt.textContent = bd[0];
     });
-    MS.core.sub = order.length + " جزء";
-    var seen = {}, count = 0, flows = [];
+    nodeEls.core.g.setAttribute("class", "node core");
+    var seen = {}, count = 0;
     Object.keys(res.info).forEach(function (id) {
       var inf = res.info[id], a = HOME[inf.via], b = HOME[id];
-      if (!a || !b || a === b || !MS[a] || !MS[b]) return;
-      var k = a + ">" + b; if (seen[k] || count > 14) return; seen[k] = 1; count++; flows.push({ a: a, b: b });
+      if (!a || !b || a === b || !pos[a] || !pos[b]) return;
+      var k = a + ">" + b; if (seen[k] || count > 14) return; seen[k] = 1; count++;
+      el("path", { "class": "flow-edge", d: curve(a, b, 24 * (count % 2 ? 1 : -1)), "marker-end": "url(#arrowhead)" }, fl);
     });
-    Stage.setFlows(flows);
   }
 
-  // ---- panel -----------------------------------------------------------------------------------------
+  // ---- panel ----------------------------------------------------------------------------------
   function chip(cls, text) { var s = document.createElement("span"); s.className = "chip " + cls; s.textContent = text; return s; }
+  var UNITS = order.filter(function (g) { return g.kind === "leaf" || (g.kind === "area" && !g.leaves.length); });
+  function unitName(u) { return u.kind === "leaf" ? u.name + " · " + DISP[u.area].name : u.name; }
   function names(arr) { return arr.map(function (u) { return "«" + unitName(u) + "»"; }).join("، "); }
   function fnText(id) { var n = NODE[id]; return n.kind === "function" ? n.name + "()" : label(id); }
   function because(u, res) {
@@ -621,7 +464,7 @@ details[open] summary { margin-bottom: 10px; }
     var ul = document.createElement("ul");
     units.forEach(function (u) {
       var gs = groupState(u, res), li = document.createElement("li"), b = document.createElement("b"), s1 = document.createElement("span"), s2 = document.createElement("span");
-      li.className = "unit"; b.textContent = unitName(u); s1.textContent = u.desc; s1.style.display = "block";
+      li.className = "unit"; b.textContent = unitName(u); s1.textContent = u.desc;
       var why = because(u, res);
       s2.textContent = gs.hit + " من " + gs.total + " دالة" + (why ? " · " + why : "");
       li.appendChild(b); li.appendChild(s1); li.appendChild(s2); ul.appendChild(li);
@@ -671,7 +514,6 @@ details[open] summary { margin-bottom: 10px; }
     }
     if (!U.direct.length && !U.indirect.length && !alsoGone.length) t += " لا شي تاني بيعتمد عليه بحسب الخريطة.";
     $("summary").textContent = t;
-    $("summary").style.borderColor = state.mode === "delete" ? "var(--removed)" : "var(--target)";
 
     var chips = $("chips"); chips.textContent = "";
     chips.appendChild(chip(state.mode === "delete" ? "removed" : "target", (state.mode === "delete" ? "ينحذف " : "تعدّل ") + U.removed.length + " جزء"));
@@ -696,18 +538,21 @@ details[open] summary { margin-bottom: 10px; }
     gs.appendChild(det);
   }
 
-  function choose(id, fromMap) {
-    if (id === "core" || !DISP[id]) return;
-    state.sel = id; render(); Stage.focusOn(id);
-    if (fromMap) { var r = $("panel").getBoundingClientRect(); if (window.innerWidth < 1000 && (r.top > window.innerHeight * .8 || r.bottom < 0)) { try { $("panel").scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} } }
+  function choose(id, scroll) {
+    if (id === "core") return;
+    if (id !== state.sel) state.sel = id;
+    render();
+    if (scroll) { var r = $("panel").getBoundingClientRect(); if (r.top > window.innerHeight * 0.75 || r.bottom < 0) { try { $("panel").scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} } }
   }
   $("mModify").addEventListener("click", function () { state.mode = "modify"; render(); });
   $("mDelete").addEventListener("click", function () { state.mode = "delete"; render(); });
 
-  // ---- permissions mode: its own map (centre -> permissions -> what branches from each) ---------------
-  var HACK = false;
-  var PV = { view: "top", rule: null, sel: null };
+  // ---- permissions mode: its own map (centre -> permissions -> what branches from each) ------------
+  var HACK = false, MAP_INTRO = $("intro").textContent;
+  var PM = $("permMap"), PV = { view: "top", rule: null, sel: null };
+  var UNITS = order.filter(function (g) { return g.kind === "leaf" || (g.kind === "area" && !g.leaves.length); });
   function unitCaps(u) { var c = {}; u.members.forEach(function (m) { (NODE[m].caps || []).forEach(function (k) { (c[k] = c[k] || []).push(m); }); }); return c; }
+  function unitName(u) { return u.kind === "leaf" ? u.name + " · " + DISP[u.area].name : u.name; }
   var CAPLBL = { delete: "يمسح ملفات", send: "يرسل للإنترنت", install: "يثبّت برامج", code: "يشغّل أي كود", secrets: "يقرأ الأسرار", outside: "برا المشروع", modify: "يعدّل ملفات" };
   var CAPSTATE = { delete: "danger", send: "danger", install: "danger", code: "danger", secrets: "danger", outside: "watch", modify: "watch" };
   var CAPEXPL = { delete: "يقدر يمسح ملفات بدون تراجع.", send: "يقدر يرسل بيانات للإنترنت أو ينشر.", install: "يقدر ينزّل ويثبّت برامج وحزماً على جهازك.", code: "يقدر يشغّل أي كود، فكل شي ممكن.", secrets: "يقدر يقرأ ملفات سرية: مفاتيح وكلمات سر.", outside: "يقدر يوصل لملفات برا مجلد المشروع.", modify: "يقدر يعدّل الملفات بدون ما يسألك." };
@@ -760,45 +605,98 @@ details[open] summary { margin-bottom: 10px; }
       var mine = rs.filter(function (r) { return catOf(r) === c.id; }).sort(function (a, b) { return RISKS[b.risk] - RISKS[a.risk]; });
       if (!mine.length) return;
       var shown = mine.length > 3 ? mine.slice(0, 2) : mine, hidden = mine.length > 3 ? mine.slice(2) : [];
-      var kids = shown.map(function (r) { var cp = capsOfRule(r); return { id: "r" + r._i, kind: "rule", rule: r, r: 9, label: shortOf(r), sub: r.kind === "deny" ? "ممنوع" : (cp[0] ? CAPLBL[cp[0]] : (r.risk === "red" ? "خطر" : r.risk === "yellow" ? "بحذر" : "آمن")), state: r.kind === "deny" ? "ok" : stOf(r.risk) }; });
-      if (hidden.length) kids.push({ id: "more:" + c.id, kind: "more", rules: hidden, r: 8, label: "+" + hidden.length + " أخرى", sub: "", state: worstSt(hidden.map(function (r) { return stOf(r.risk); })) });
-      groups.push({ node: { id: "cat:" + c.id, kind: "cat", cat: c, rules: mine, r: 15, label: c.name, sub: mine.length + " صلاحية", state: c.id === "deny" ? "ok" : worstSt(mine.map(function (r) { return stOf(r.risk); })) }, kids: kids });
+      var kids = shown.map(function (r) { var cp = capsOfRule(r); return { id: "r" + r._i, kind: "rule", rule: r, label: shortOf(r), sub: r.kind === "deny" ? "ممنوع" : (cp[0] ? CAPLBL[cp[0]] : (r.risk === "red" ? "خطر" : r.risk === "yellow" ? "بحذر" : "آمن")), state: r.kind === "deny" ? "ok" : stOf(r.risk) }; });
+      if (hidden.length) kids.push({ id: "more:" + c.id, kind: "more", rules: hidden, label: "+" + hidden.length + " أخرى", sub: "", state: worstSt(hidden.map(function (r) { return stOf(r.risk); })) });
+      groups.push({ node: { id: "cat:" + c.id, kind: "cat", cat: c, rules: mine, label: c.name, sub: mine.length + " صلاحية", state: c.id === "deny" ? "ok" : worstSt(mine.map(function (r) { return stOf(r.risk); })) }, kids: kids });
     });
-    return { center: { id: "c", kind: "center", r: 25, label: "صلاحيات Claude", sub: rs.filter(function (r) { return r.kind === "allow"; }).length + " دائمة", state: "core" }, groups: groups };
+    return { center: { id: "c", kind: "center", label: "صلاحيات Claude", sub: rs.filter(function (r) { return r.kind === "allow"; }).length + " دائمة" }, groups: groups };
   }
   function affectedKids(cap) {
     function withCaps(keys) { return UNITS.filter(function (u) { var c = unitCaps(u); return keys.some(function (k) { return c[k]; }); }); }
     var list;
-    if (cap === "modify" || cap === "delete" || cap === "code") return [{ id: "all:" + cap, kind: "all", r: 10, label: "كل أجزاء المشروع", sub: UNITS.length + " جزء", state: cap === "modify" ? "watch" : "danger" }];
-    if (cap === "install") return [{ id: "ext:install", kind: "ext", r: 10, label: "برامج جهازك", sub: "", state: "danger" }];
-    if (cap === "outside") return [{ id: "ext:outside", kind: "ext", r: 10, label: "ملفاتك برا المشروع", sub: "", state: "watch" }];
+    if (cap === "modify" || cap === "delete" || cap === "code") return [{ id: "all:" + cap, kind: "all", label: "كل أجزاء المشروع", sub: UNITS.length + " جزء", state: cap === "modify" ? "watch" : "danger" }];
+    if (cap === "install") return [{ id: "ext:install", kind: "ext", label: "برامج جهازك", sub: "", state: "danger" }];
+    if (cap === "outside") return [{ id: "ext:outside", kind: "ext", label: "ملفاتك برا المشروع", sub: "", state: "watch" }];
     list = cap === "send" ? withCaps(["NET", "AI", "SRV"]) : withCaps(["KEY", "STO", "DB"]);
-    var kids = list.slice(0, 3).map(function (u) { var c = unitCaps(u); return { id: "u:" + cap + ":" + u.id, kind: "unit", unit: u, r: 9, label: u.name, sub: Object.keys(c).join(" "), state: (c.KEY || c.AI || c.DB) ? "danger" : "watch" }; });
-    if (list.length > 3) kids.push({ id: "umore:" + cap, kind: "umore", units: list.slice(3), r: 8, label: "+" + (list.length - 3) + " أجزاء", sub: "", state: "watch" });
-    if (!kids.length) kids.push({ id: "none:" + cap, kind: "ext", r: 8, label: "ما لقيت جزء متأثر", sub: "", state: "ok" });
+    var kids = list.slice(0, 3).map(function (u) { var c = unitCaps(u); return { id: "u:" + cap + ":" + u.id, kind: "unit", unit: u, label: u.name, sub: Object.keys(c).join(" "), state: (c.KEY || c.AI || c.DB) ? "danger" : "watch" }; });
+    if (list.length > 3) kids.push({ id: "umore:" + cap, kind: "umore", units: list.slice(3), label: "+" + (list.length - 3) + " أجزاء", sub: "", state: "watch" });
+    if (!kids.length) kids.push({ id: "none:" + cap, kind: "ext", label: "ما لقيت جزء متأثر", sub: "", state: "ok" });
     return kids;
   }
   function ruleTree(r) {
     var caps = capsOfRule(r), groups = [];
-    caps.forEach(function (cap) { groups.push({ node: { id: "cap:" + cap, kind: "cap", cap: cap, r: 15, label: CAPLBL[cap], sub: "", state: CAPSTATE[cap] }, kids: affectedKids(cap) }); });
-    if (!groups.length) groups.push({ node: { id: "cap:none", kind: "cap", cap: "none", r: 15, label: r.kind === "deny" ? "محمي" : "ما فيه أثر خطر", sub: "", state: "ok" }, kids: [] });
-    return { center: { id: "c", kind: "center", r: 25, label: shortOf(r), sub: r.kind === "deny" ? "ممنوع" : "صلاحية دائمة", state: r.kind === "deny" ? "ok" : stOf(r.risk) }, groups: groups };
+    caps.forEach(function (cap) { groups.push({ node: { id: "cap:" + cap, kind: "cap", cap: cap, label: CAPLBL[cap], sub: "", state: CAPSTATE[cap] }, kids: affectedKids(cap) }); });
+    if (!groups.length) groups.push({ node: { id: "cap:none", kind: "cap", cap: "none", label: r.kind === "deny" ? "محمي" : "ما فيه أثر خطر", sub: "", state: "ok" }, kids: [] });
+    return { center: { id: "c", kind: "center", label: shortOf(r), sub: r.kind === "deny" ? "ممنوع" : "صلاحية دائمة", state: stOf(r.risk) }, groups: groups };
   }
-  function drawPerm(keepView) {
-    var tree = PV.view === "rule" ? ruleTree(PV.rule) : topTree(), L = layout3d(tree);
-    L.N.forEach(function (n) { n.sel = PV.sel === n.id; });
-    Stage.setScene({ nodes: L.N, edges: L.E, flows: [], byId: L.byId }, "hack", keepView);
-    if (PV.sel) Stage.focusOn(PV.sel);
+
+  // layout: ellipses for the first and second ring, then push overlapping boxes apart
+  function layoutTree(tree) {
+    var N = [], E = [], c = tree.center; c.x = 0; c.y = 0; c.w = 104; c.h = 46; c.fixed = true; N.push(c);
+    var n = tree.groups.length;
+    tree.groups.forEach(function (g, i) {
+      var a = (n === 1 ? -90 : -90 + i * 360 / n) * Math.PI / 180, o = g.node;
+      o.x = 112 * Math.cos(a); o.y = 175 * Math.sin(a); o.w = 100; o.h = 42; N.push(o); E.push([c, o]);
+      var m = g.kids.length, spread = Math.min(30, 80 / n);
+      g.kids.forEach(function (k, j) {
+        var t = a + (m === 1 ? 0 : -spread + 2 * spread * j / (m - 1)) * Math.PI / 180;
+        k.x = 215 * Math.cos(t); k.y = 310 * Math.sin(t); k.w = 96; k.h = 40; N.push(k); E.push([o, k]);
+      });
+    });
+    for (var it = 0; it < 120; it++) {
+      var moved = false;
+      for (var i = 0; i < N.length; i++) for (var j = i + 1; j < N.length; j++) {
+        var A = N[i], B = N[j], dx = B.x - A.x, dy = B.y - A.y, ox = (A.w + B.w) / 2 + 6 - Math.abs(dx), oy = (A.h + B.h) / 2 + 6 - Math.abs(dy);
+        if (ox > 0 && oy > 0) {
+          moved = true;
+          var fa = A.fixed ? 0 : (B.fixed ? 1 : 0.5), fb = B.fixed ? 0 : (A.fixed ? 1 : 0.5);
+          if (ox < oy) { var sx = dx >= 0 ? 1 : -1; A.x -= sx * ox * fa; B.x += sx * ox * fb; }
+          else { var sy = dy >= 0 ? 1 : -1; A.y -= sy * oy * fa; B.y += sy * oy * fb; }
+        }
+      }
+      if (!moved) break;
+    }
+    return { N: N, E: E };
+  }
+  function pfit(t, maxw, base) {
+    t.style.fontSize = ""; t.setAttribute("font-size", base); var w = 0; try { w = t.getComputedTextLength(); } catch (e) {}
+    if (w > maxw) t.setAttribute("font-size", Math.max(6, base * maxw / w).toFixed(2));
+  }
+  function pcurve(a, b) {
+    function pt(n, tx, ty) { var dx = tx - n.x, dy = ty - n.y, k = Math.min((n.w / 2) / Math.max(Math.abs(dx), 1e-6), (n.h / 2) / Math.max(Math.abs(dy), 1e-6)); return [n.x + dx * k, n.y + dy * k]; }
+    var p1 = pt(a, b.x, b.y), p2 = pt(b, a.x, a.y), mx = (p1[0] + p2[0]) / 2, my = (p1[1] + p2[1]) / 2, dx = p2[0] - p1[0], dy = p2[1] - p1[1], len = Math.sqrt(dx * dx + dy * dy) || 1;
+    return "M" + p1[0].toFixed(1) + "," + p1[1].toFixed(1) + " Q" + (mx - dy / len * 8).toFixed(1) + "," + (my + dx / len * 8).toFixed(1) + " " + p2[0].toFixed(1) + "," + p2[1].toFixed(1);
+  }
+  function currentTree() { return PV.view === "rule" ? ruleTree(PV.rule) : topTree(); }
+  function drawPerm() {
+    var tree = currentTree(), L = layoutTree(tree);
+    while (PM.firstChild) PM.removeChild(PM.firstChild);
+    var gE = el("g", {}, PM), gN = el("g", {}, PM), minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+    L.E.forEach(function (e) { el("path", { "class": "tree-edge", d: pcurve(e[0], e[1]) }, gE); });
+    L.N.forEach(function (n) {
+      minX = Math.min(minX, n.x - n.w / 2); maxX = Math.max(maxX, n.x + n.w / 2); minY = Math.min(minY, n.y - n.h / 2); maxY = Math.max(maxY, n.y + n.h / 2);
+      var cls = n.kind === "center" ? "node core" + (PV.view === "rule" ? " pm-" + (n.state || "ok") : "") : "node pm-" + n.state;
+      var g = el("g", { "class": cls + (PV.sel === n.id ? " sel" : ""), tabindex: "0", role: "button", "aria-label": n.label + (n.sub ? ": " + n.sub : "") }, gN);
+      el("rect", { "class": "ring", x: n.x - n.w / 2 - 4, y: n.y - n.h / 2 - 4, width: n.w + 8, height: n.h + 8, rx: 13 }, g);
+      el("rect", { "class": "box", x: n.x - n.w / 2, y: n.y - n.h / 2, width: n.w, height: n.h, rx: 10 }, g);
+      var t = el("text", { "class": "t", x: n.x, y: n.y - (n.sub ? 4 : 0), "text-anchor": "middle", "dominant-baseline": "central" }, g); t.textContent = n.label;
+      if (n.sub) { var s2 = el("text", { "class": "sub", x: n.x, y: n.y + 11, "text-anchor": "middle", "dominant-baseline": "central" }, g); s2.textContent = n.sub; pfit(s2, n.w - 10, 9); s2.style.fontSize = s2.getAttribute("font-size") + "px"; }
+      pfit(t, n.w - 10, n.kind === "center" ? 14 : n.kind === "cat" ? 12.5 : 11.5);
+      function go() { onPermNode(n); }
+      g.addEventListener("click", go);
+      g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+    });
+    PM.setAttribute("viewBox", (minX - 20) + " " + (minY - 54) + " " + (maxX - minX + 40) + " " + (maxY - minY + 124)); PM._vb0 = [minX - 20, minY - 54, maxX - minX + 40, maxY - minY + 124];
+    PM._nodes = L.N;
   }
   function onPermNode(n) {
-    var viewChanged = false;
-    if (n.kind === "rule") { PV = { view: "rule", rule: n.rule, sel: null }; viewChanged = true; }
-    else if (n.kind === "center" && PV.view === "rule") { PV = { view: "top", rule: null, sel: null }; viewChanged = true; }
+    if (n.kind === "rule") { PV = { view: "rule", rule: n.rule, sel: null }; }
+    else if (n.kind === "center" && PV.view === "rule") { PV = { view: "top", rule: null, sel: null }; }
     else { PV.sel = n.id; PV._node = n; }
-    drawPerm(!viewChanged); renderPermPanel();
-    if (window.innerWidth < 1000) { var r = $("permPanel").getBoundingClientRect(); if (r.top > window.innerHeight * .8) { try { $("permPanel").scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} } }
+    drawPerm(); renderPermPanel();
+    var r = $("permPanel").getBoundingClientRect(); if (r.top > window.innerHeight * 0.75) { try { $("permPanel").scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} }
   }
-  function openRule(r) { PV = { view: "rule", rule: r, sel: null }; drawPerm(false); renderPermPanel(); }
+  function openRule(r) { PV = { view: "rule", rule: r, sel: null }; drawPerm(); renderPermPanel(); try { $("permMap").scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} }
   function renderPermPanel() {
     var p = $("permPanel"); p.textContent = "";
     function add(tag, cls, text, parent) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; (parent || p).appendChild(e); return e; }
@@ -812,11 +710,11 @@ details[open] summary { margin-bottom: 10px; }
     if (!APPR) { add("h2", "", "صلاحيات Claude"); add("p", "safe-line", "ما في موافقات محمّلة بعد."); return; }
     if (PV.view === "rule") {
       var r = PV.rule, caps = capsOfRule(r);
-      var back = add("button", "back", "← كل الصلاحيات"); back.type = "button"; back.addEventListener("click", function () { PV = { view: "top", rule: null, sel: null }; drawPerm(false); renderPermPanel(); });
+      var back = add("button", "back", "← كل الصلاحيات"); back.type = "button"; back.addEventListener("click", function () { PV = { view: "top", rule: null, sel: null }; drawPerm(); renderPermPanel(); });
       add("h2", "", shortOf(r));
       add("p", "sel-desc", r.plain);
       add("p", "lead", (r.kind === "deny" ? "" : "أسوأ شي بيغطيه: ") + r.worst);
-      add("p", "safe-line", (r.scopeText || "") + " · " + r.raw);
+      add("p", "meta", (r.scopeText || "") + " · " + r.raw);
       add("h3", "", "شو تفرّع عنها");
       if (!caps.length) add("p", "safe-line", r.kind === "deny" ? "هاي حماية: Claude ما بيقدر يعمل هالشي." : "ما فيها قدرة خطرة.");
       caps.forEach(function (cap) {
@@ -842,7 +740,7 @@ details[open] summary { margin-bottom: 10px; }
     if (selN && (selN.kind === "cat" || selN.kind === "more")) {
       add("h3", "", selN.kind === "cat" ? selN.label + " (" + selN.rules.length + ")" : selN.label);
       add("p", "safe-line", "اضغط على صلاحية لتشوف شو تفرّع منها.");
-      selN.rules.forEach(function (r) { ruleRow(r, p); });
+      (selN.kind === "cat" ? selN.rules : selN.rules).forEach(function (r) { ruleRow(r, p); });
     } else {
       add("h3", "", "الأخطر، اضغط وحدة لتشوف شو تفرّع منها");
       allRules().filter(function (r) { return r.kind === "allow"; }).sort(function (a, b) { return RISKS[b.risk] - RISKS[a.risk]; }).slice(0, 5).forEach(function (r) { ruleRow(r, p); });
@@ -850,7 +748,6 @@ details[open] summary { margin-bottom: 10px; }
     var det = add("details", "", null); add("summary", "", "كل الصلاحيات (" + allRules().length + ")", det);
     allRules().forEach(function (r) { if (!r.isMode) { var w = add("div", "", null, det); w.style.marginTop = "6px"; ruleRow(r, w); } });
   }
-
   var typer = null;
   function typePrompt(text) {
     var el = $("hackPrompt"); clearInterval(typer); el.textContent = "";
@@ -861,16 +758,17 @@ details[open] summary { margin-bottom: 10px; }
     HACK = which === "perm";
     document.body.classList.toggle("hack", HACK);
     $("tabMap").setAttribute("aria-pressed", String(!HACK)); $("tabAppr").setAttribute("aria-pressed", String(HACK));
+    function setHidden(e, v) { if (v) e.setAttribute("hidden", ""); else e.removeAttribute("hidden"); }
+    setHidden($("map"), HACK); setHidden($("permMap"), !HACK);
     $("panel").hidden = HACK; $("permPanel").hidden = !HACK; $("proof").hidden = HACK || !RES; $("strip").hidden = HACK;
     $("legendMap").hidden = HACK; $("legendHack").hidden = !HACK; $("hackPrompt").hidden = !HACK;
     $("intro").textContent = HACK ? "هون كل شي سمحت لClaude فيه. المركز هو Claude، وحواليه الصلاحيات، واضغط أي وحدة لتشوف شو تفرّع منها وأي أجزاء من مشروعك بتوصلها." : MAP_INTRO;
     var st = $("stage"); st.classList.remove("boot"); void st.offsetWidth; if (HACK) st.classList.add("boot");
-    if (HACK) { PV = { view: "top", rule: null, sel: null }; drawPerm(false); renderPermPanel(); typePrompt("$ claude --permissions --reach"); }
-    else { Stage.setScene(mapScene, "map", false); render(); }
+    if (HACK) { PV = { view: "top", rule: null, sel: null }; drawPerm(); renderPermPanel(); typePrompt("$ claude --permissions --reach"); } else { render(); fit(); }
+    resetView();
   }
-  $("tabMap").addEventListener("click", function () { if (HACK) showTab("map"); });
-  $("tabAppr").addEventListener("click", function () { if (!HACK) showTab("perm"); });
-  Stage.onPick = function (n) { if (HACK) onPermNode(n); else choose(n.id, true); };
+  $("tabMap").addEventListener("click", function () { showTab("map"); });
+  $("tabAppr").addEventListener("click", function () { showTab("perm"); });
 
   $("renameBtn").addEventListener("click", function () {
     var d = DISP[state.sel], h = $("selName"), inp = document.createElement("input"), finished = false;
@@ -878,19 +776,61 @@ details[open] summary { margin-bottom: 10px; }
     h.textContent = ""; h.appendChild(inp); inp.focus(); inp.select();
     function done(save) {
       if (finished) return; finished = true;
-      if (save && inp.value.trim()) { d.name = inp.value.trim(); NM[d.id] = d.name; saveNames(NM); pickBtns[d.id].s.textContent = d.name; }
+      if (save && inp.value.trim()) { d.name = inp.value.trim(); NM[d.id] = d.name; saveNames(NM); nodeEls[d.id].t.textContent = d.name; pickBtns[d.id].s.textContent = d.name; fit(); }
       render();
     }
     inp.addEventListener("keydown", function (e) { if (e.key === "Enter") done(true); else if (e.key === "Escape") done(false); });
     inp.addEventListener("blur", function () { done(true); });
   });
 
-  // ---- proof section ---------------------------------------------------------------------------------
-  (function proof() { var s = $("proof"); if (!RES) { s.hidden = true; return; } s.innerHTML = '<h2>كم هالخريطة دقيقة؟</h2>' + RES.html; })();
 
-  Stage.setScene(mapScene, "map", false);
+  // ---- zoom and drag (works on whichever map is showing) ---------------------------------------------
+  function curSvg() { return HACK ? $("permMap") : $("map"); }
+  function vb(svg) { return svg.getAttribute("viewBox").split(" ").map(Number); }
+  function setVb(svg, a) { svg.setAttribute("viewBox", a.join(" ")); }
+  function resetView() { [$("map"), $("permMap")].forEach(function (s) { if (s._vb0) setVb(s, s._vb0); }); }
+  function zoomBy(svg, f, cx, cy) {
+    var a = vb(svg), b0 = svg._vb0 || a, nw = a[2] / f, nh = a[3] / f;
+    if (nw > b0[2] * 1.6 || nw < b0[2] / 5) return;
+    var px = cx == null ? a[0] + a[2] / 2 : cx, py = cy == null ? a[1] + a[3] / 2 : cy;
+    setVb(svg, [px - (px - a[0]) / f, py - (py - a[1]) / f, nw, nh]);
+  }
+  function toUser(svg, ev) { var r = svg.getBoundingClientRect(), a = vb(svg), s = Math.min(r.width / a[2], r.height / a[3]), ox = (r.width - a[2] * s) / 2, oy = (r.height - a[3] * s) / 2; return { x: a[0] + (ev.clientX - r.left - ox) / s, y: a[1] + (ev.clientY - r.top - oy) / s, s: s }; }
+  [$("map"), $("permMap")].forEach(function (svg) {
+    var drag = null, moved = false;
+    svg.addEventListener("wheel", function (e) { e.preventDefault(); var u = toUser(svg, e); zoomBy(svg, Math.exp(-e.deltaY * .0015), u.x, u.y); $("hint").classList.add("gone"); }, { passive: false });
+    svg.addEventListener("pointerdown", function (e) { if (e.button > 0) return; drag = { x: e.clientX, y: e.clientY, vb: vb(svg), s: toUser(svg, e).s }; moved = false; });
+    window.addEventListener("pointermove", function (e) {
+      if (!drag || drag.svg === false) return;
+      var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!moved && Math.abs(dx) + Math.abs(dy) < 5) return;
+      if (!moved) { moved = true; svg.classList.add("grabbing"); $("hint").classList.add("gone"); }
+      var a = drag.vb; setVb(svg, [a[0] - dx / drag.s, a[1] - dy / drag.s, a[2], a[3]]);
+    });
+    window.addEventListener("pointerup", function () { if (drag) { drag = null; svg.classList.remove("grabbing"); } });
+    svg.addEventListener("click", function (e) { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+  });
+  $("bIn").addEventListener("click", function () { zoomBy(curSvg(), 1.3); });
+  $("bOut").addEventListener("click", function () { zoomBy(curSvg(), 1 / 1.3); });
+  $("bReset").addEventListener("click", resetView);
+  (function theme() {
+    var root = document.documentElement, KEY = "impact:theme";
+    try { var t = localStorage.getItem(KEY); if (t === "light" || t === "dark") root.setAttribute("data-theme", t); } catch (e) {}
+    $("bTheme").addEventListener("click", function () {
+      var dark = root.getAttribute("data-theme") ? root.getAttribute("data-theme") === "dark" : !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+      var next = dark ? "light" : "dark"; root.setAttribute("data-theme", next); try { localStorage.setItem(KEY, next); } catch (e) {}
+    });
+  })();
+
+  // ---- proof section ---------------------------------------------------------------------------------
+  (function proof() {
+    var s = $("proof"); if (!RES) { s.hidden = true; return; }
+    var h = '<h2>كم هالخريطة دقيقة؟</h2>' + RES.html;
+    s.innerHTML = h;
+  })();
+
   render();
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { Stage.mark(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
 })();
 </script>
 </body>
