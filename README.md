@@ -63,6 +63,16 @@ claude plugin update impact-map@impact-map
 
 وبعدها افتح **جلسة جديدة** بـ Claude Code (الإضافة بتنقرا لما تبلّش الجلسة).
 
+## مؤشر الثقة
+
+جنب كل نتيجة بتشوف **الثقة: عالية / متوسطة / منخفضة**، ومعها السبب بكلام بسيط. المؤشر ما بيغيّر النتيجة، بس بيقلك **إيمتى تصدّق الخريطة وإيمتى تتأكد بنفسك**:
+
+- **عالية:** كل الروابط لهالجزء مكتوبة صراحة بالكود (استدعاء أو استيراد مباشر).
+- **متوسطة:** في شي حواليه الخريطة ما بتقدر تتبعه بالكامل، مثلاً ملف بيذكر ملفه أو مجلده بالاسم (بيقراه كبيانات أو بيشغّله)، أو بيوصل لدواله بأسماء بتنحسب وقت التشغيل (`obj[name]`)، أو بيتمرّر كدالة رد.
+- **منخفضة:** الخريطة بتقول «ما حدا بيستعمله»، بس في كود بنفس المكان بيحمّل ملفات بأسماء ما بتنعرف قبل التشغيل. هون لا تحذف قبل ما تتأكد.
+
+جرّبناه على الحالات اللي الخريطة فعلياً غلطت فيها: التسع ملفات اللي فاتت الخريطة بكود هالأداة طلعت كلها «متوسطة» مع السبب الصح. وبمشروع express، الملف الوحيد اللي بيتحمّل بـ `require(path)` (ما حدا بيستورده صراحة) طلع «منخفضة».
+
 ## قد إيش هي دقيقة؟ (أرقام حقيقية، مع حدودها)
 
 - **الروابط بين الملفات:** على مشروع صغير بـ14 ملف، حذفنا كل ملف فعلياً وشغّلنا الباقي: انكسر 49 ملف، والخريطة ما فاتها ولا واحد. وعلى كود هالأداة نفسها (36 ملف): انكسر 90 ملف، والخريطة توقّعت 81 (90%). **التسعة اللي فاتتها كلها نفس الحالة:** ملف اختبار بيقرا مشروعاً تانياً **كبيانات** مو ككود، وهالنوع من الاعتماد ما بيبيّن بالخريطة. (بيقيس الكسر عند تحميل الملف بس؛ `tests/file_level_check.js` بيعيد القياس على أي مشروع.)
@@ -105,6 +115,8 @@ Everything runs locally. No network, nothing uploaded.
 Inside Claude Code (as a plugin): `/plugin marketplace add waleedolabs/impact-map`, then `/plugin install impact-map@impact-map`.
 Then run `/impact-map`, or just ask "what breaks if I delete accounts.js?" and Claude answers from the map.
 Update later with `claude plugin marketplace update impact-map` and `claude plugin update impact-map@impact-map`, then start a new session.
+
+Every result carries a confidence level (high / medium / low) with plain reasons: it flags what the map cannot follow around that part (files named in the code and read as data or run, `obj[name]` access, callbacks, code loaded by a run-time name). On real misses it flagged all 9 files the map missed in this tool's own code, and the one express file loaded through `require(path)`.
 
 In the page: pick any part and see "if you edit it" and "if you delete it" side by side under the map; "all details" shows every function as its own box; zoom with the wheel, drag to move, light/dark toggle.
 

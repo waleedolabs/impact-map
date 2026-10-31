@@ -38,6 +38,10 @@ node "TOOL/analyzer/query.js" "PROJECT/.impact/graph.json" "X" --delete   # dele
 X is a function name or a file path. Read the answer out in plain words: what depends on it directly, what may be affected further,
 and what is safe. If it says X matches several parts, ask which one.
 
+The output ends with a `Confidence:` line (HIGH / MEDIUM / LOW) and its reasons. Always tell the user the level and the reasons in plain
+words. If it is MEDIUM or LOW, say what to check before acting (the files named in the reasons), and never present "nothing depends on it"
+as settled when the confidence is LOW.
+
 ## 3. "What permissions did I give you?"
 
 ```
