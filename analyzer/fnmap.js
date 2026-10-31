@@ -52,6 +52,9 @@ function loadTypeScript(root) {
   return (TS = null);
 }
 
+function readPkg(root) {   // a library's entry file can be used by code outside the project
+  try { const p = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')); const main = p.main ? path.posix.normalize(String(p.main)).replace(/^\.\//, '') : (fs.existsSync(path.join(root, 'index.js')) ? 'index.js' : null); return { main: main && !/\.[a-z]+$/i.test(main) ? main + '.js' : main, private: !!p.private }; } catch (e) { return null; }
+}
 function kids(node) {
   const out = [];
   for (const k in node) {
@@ -73,6 +76,8 @@ const VERBS = new Set(['get', 'post', 'put', 'delete', 'patch', 'all', 'use', 'h
 function analyzeProject(rootArg) {
   const root = path.resolve(rootArg);
   const nodes = new Map(), edges = new Map(), problems = [], skipped = [], filesInfo = [];
+  const facts = {}, dataRefs = [];   // signs that the map may not see everything (used for the confidence of a result)
+  const addFact = (file, key, from) => { const f = (facts[file] = facts[file] || {}); f[key] = f[key] || []; if (!f[key].includes(from)) f[key].push(from); };
   const addEdge = (from, to, how) => { if (!from || !to || from === to) return; const k = from + '|' + to + '|' + how; const e = edges.get(k); if (e) e.n++; else edges.set(k, { from, to, how, n: 1 }); };
 
   // ---- 1. units: one per script (a .js/.ts file, or one inline <script> of an .html file)
@@ -95,6 +100,14 @@ function analyzeProject(rootArg) {
   }
   const byFile = new Map(); units.forEach((u) => { if (!byFile.has(u.file)) byFile.set(u.file, u); });
   const fileKey = (f) => f.replace(/\.(m?js|cjs|jsx|tsx?|html?)$/i, '');
+  const allFiles = [...byFile.keys()];
+  function noteDataRef(u, rel, fromDir) {
+    const c = path.posix.normalize(fromDir ? path.posix.join(path.posix.dirname(u.file), rel) : rel).replace(/\/$/, '');
+    if (!c || c === '.' || c.startsWith('..')) return;
+    const isFile = byFile.has(c) || allFiles.some((f) => f.replace(/\.[^./]+$/, '') === c);
+    const isDir = !isFile && allFiles.some((f) => f.startsWith(c + '/'));
+    if ((isFile || isDir) && c !== u.file && !dataRefs.some((d) => d.from === u.file && d.target === c)) dataRefs.push({ from: u.file, target: c, folder: isDir });
+  }
   const byKey = new Map(); [...byFile.keys()].forEach((f) => { if (!byKey.has(fileKey(f))) byKey.set(fileKey(f), f); });
   function resolveImport(fromFile, src) {
     let base;
@@ -318,6 +331,24 @@ function analyzeProject(rootArg) {
         const t = target(node.name, cur);
         if (t) for (const from of (routes.length ? routes : [owner(cur).id])) addEdge(from, t, 'calls');
       }
+      if (node.type === 'MemberExpression' && node.computed && node.object.type === 'Identifier' && node.property.type !== 'Literal' &&
+          !(node.property.type === 'Identifier' && /^(i|j|k|n|idx|index|pos|len)$/.test(node.property.name)) && !/^(Binary|Update|Unary)Expression$/.test(node.property.type)) {
+        // obj[name]: functions reached by a name worked out while the program runs; the map cannot follow those
+        const on = node.object.name, imp = u.imports.get(on), lo = objOf(on, cur);
+        if (imp && byFile.has(imp.file)) addFact(imp.file, 'dynFrom', u.file);
+        else if (lo && Object.keys(lo).length) addFact(u.file, 'dynFrom', u.file);
+      }
+      if (node.type === 'CallExpression' && node.callee.type === 'MemberExpression' && !node.callee.computed && node.callee.object.type === 'Identifier' &&
+          node.callee.object.name === 'path' && /^(join|resolve)$/.test(node.callee.property.name) && node.arguments.length) {
+        // path.join(__dirname, 'fixtures', 'shop'): a file or folder of the project named in the code (read as data, run as a command...)
+        const parts = node.arguments.map((x) => (x.type === 'Identifier' && x.name === '__dirname') ? '.' : (x.type === 'Literal' && typeof x.value === 'string' ? x.value : null));
+        if (parts.every((x) => x !== null) && parts.some((x) => x !== '.')) noteDataRef(u, path.posix.join(...parts), parts[0] === '.');
+      }
+      if (node.type === 'Literal' && typeof node.value === 'string' && /^\.\.?\//.test(node.value) && parent.type !== 'ImportDeclaration' && parent.type !== 'ExportNamedDeclaration' &&
+          parent.type !== 'ExportAllDeclaration' && parent.type !== 'ImportExpression' && !(parent.type === 'CallExpression' && parent.callee.type === 'Identifier' && parent.callee.name === 'require') &&
+          !(parent.type === 'CallExpression' && parent.callee.type === 'MemberExpression' && parent.callee.object.type === 'Identifier' && parent.callee.object.name === 'path')) {
+        noteDataRef(u, node.value, true);
+      }
       if (node.type === 'CallExpression') {
         const cn = node.callee.type === 'Identifier' ? node.callee.name : (node.callee.type === 'MemberExpression' && !node.callee.computed ? node.callee.property.name : '');
         if (node.callee.type === 'Identifier' && node.callee.name === 'require' && node.arguments[0] && node.arguments[0].type !== 'Literal') u._dyn = true;
@@ -363,7 +394,7 @@ function analyzeProject(rootArg) {
     nodes: [...nodes.values()].map((n) => ({ id: n.id, name: n.name, file: n.file, kind: n.kind, start: n.start, end: n.end, scriptStart: n.scriptStart, parent: n.parent, side: n.side, caps: [...new Set(n.caps || [])] })),
     edges: [...edges.values()],
     stats: { files: live.length === 0 ? 0 : new Set(live.map((u) => u.file)).size, functions: [...nodes.values()].filter((n) => n.kind === 'function').length, edges: edges.size, skipped: skipped.length, skippedTypeScript: skippedTS, typescriptSupport: TS ? 'yes' : (skippedTS ? 'no' : 'not needed') },
-    skipped, problems,
+    skipped, problems, facts, dataRefs, pkg: readPkg(root),
   };
 }
 

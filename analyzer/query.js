@@ -51,5 +51,8 @@ if (require.main === module) {
   console.log('May be affected further (' + r.indirect.length + '):'); r.indirect.slice(0, 15).forEach((x) => console.log('  - ' + r.lbl(x.id) + ' (' + r.where(x.id) + ')'));
   if (r.indirect.length > 15) console.log('  ... and ' + (r.indirect.length - 15) + ' more');
   console.log('Files involved (' + r.files.length + '): ' + r.files.slice(0, 20).join(', ') + (r.files.length > 20 ? ' ...' : ''));
+  const c = require('./confidence.js').confidenceOf(g, [...targets.map((t) => t.id)], 'en');
+  console.log('Confidence: ' + c.level.toUpperCase() + ' (' + { high: 'every link is written out in the code', medium: 'the map may miss some users, check these', low: 'the map may be missing users, check before acting' }[c.level] + ')');
+  c.reasons.forEach((x) => console.log('  - ' + x));
   console.log('This is an estimate from reading the code (calls, imports, requests). Code that is loaded dynamically can be missed.');
 }

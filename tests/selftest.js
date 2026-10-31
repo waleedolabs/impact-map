@@ -18,4 +18,8 @@ assert.ok(a.rules.some((x) => x.risk === 'red' && /rm/.test(x.raw)), 'Bash(rm:*)
 assert.ok(a.rules.some((x) => x.risk === 'green' && /ls/.test(x.raw)) === false || true);
 const out = build(root, { name: 'demo' });
 assert.ok(out.html.includes('خريطة الأثر') && !out.html.includes('/*GRAPH*/null'), 'page is built');
-console.log('ok: map, grouping, approvals and page all work on the bundled project');
+const { confidenceOf } = require('../analyzer/confidence.js');
+assert.ok(g.dataRefs.some((d) => d.from === 'server.js' && d.target === 'routes'), 'a folder named in the code is noticed');
+assert.strictEqual(confidenceOf(g, g.nodes.filter((n) => n.file === 'accounts.js' && n.kind !== 'top').map((n) => n.id)).level, 'high', 'plain imports and calls: high confidence');
+assert.ok(out.html.includes('function confidenceOf') && !out.html.includes('/*CONFJS*/'), 'confidence code is in the page');
+console.log('ok: map, grouping, approvals, confidence and page all work on the bundled project');

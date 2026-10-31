@@ -236,6 +236,15 @@ body.hack .hud-sum { display: none; }
 @media (max-width: 700px) { .hud-sum { top: 62px; max-width: calc(100% - 28px); } .hud-hint { display: none; } }
 #permPanel { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: start; }
 #permPanel > h2, #permPanel > .lead, #permPanel > .demo, #permPanel > h3, #permPanel > details, #permPanel > .back, #permPanel > .sel-desc, #permPanel > .safe-line, #permPanel > .chain { grid-column: 1 / -1; }
+
+/* ---- confidence ---- */
+.conf { margin-top: 10px; padding: 10px 14px; border-radius: 12px; background: var(--glass-2); border-inline-start: 3px solid var(--safe); }
+.conf.c-medium { border-color: var(--direct); } .conf.c-low { border-color: var(--removed); }
+.conf-head { margin: 0; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: .9rem; }
+.conf-tag { font-weight: 700; padding: 1px 10px; border-radius: 999px; background: var(--safe-bg); color: var(--safe); }
+.c-medium .conf-tag { background: var(--direct-bg); color: var(--direct); } .c-low .conf-tag { background: var(--removed-bg); color: var(--removed); }
+.conf ul { margin: 6px 0 0; padding-inline-start: 1.2rem; display: grid; gap: 3px; font-size: .86rem; color: var(--muted); }
+.hud-sum .c-high { color: var(--safe); } .hud-sum .c-medium { color: var(--direct); } .hud-sum .c-low { color: var(--removed); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -289,6 +298,7 @@ body.hack .hud-sum { display: none; }
         <div><h2 id="selName"></h2><p class="sel-desc" id="selDesc"></p><p class="where" id="selWhere"></p></div>
         <button type="button" class="back" id="renameBtn">غيّر الاسم</button>
       </div>
+      <div class="conf" id="selConf"></div>
     </section>
     <div class="cols2" id="cols">
       <section class="panel col col-modify" id="colModify" aria-label="لو عدّلت هذا الجزء">
@@ -310,6 +320,7 @@ body.hack .hud-sum { display: none; }
 (function () {
   var NS = "http://www.w3.org/2000/svg";
   var $ = function (id) { return document.getElementById(id); };
+  /*CONFJS*/
   var G = /*GRAPH*/null;
   var RES = /*RESULTS*/null;
   var AREAS = /*AREAS*/null;
@@ -655,6 +666,14 @@ body.hack .hud-sum { display: none; }
     function line(cls, txt) { var l = document.createElement("span"); l.className = cls; l.textContent = txt; hs.appendChild(l); }
     line("m", "لو عدّلته: " + M.U.direct.length + " يتأثر مباشرة · " + M.U.indirect.length + " ممكن");
     line("x", "لو حذفته: " + (D.U.direct.length + D.gone) + " يتعطّل · " + D.U.indirect.length + " ممكن");
+    var C = confidenceOf(G, d.members, "ar"), CL = { high: "عالية", medium: "متوسطة", low: "منخفضة" }[C.level];
+    line("c c-" + C.level, "الثقة بالنتيجة: " + CL);
+    var box = $("selConf"); box.textContent = ""; box.className = "conf c-" + C.level;
+    var head = document.createElement("p"); head.className = "conf-head";
+    var tag = document.createElement("span"); tag.className = "conf-tag"; tag.textContent = "الثقة: " + CL;
+    var why = document.createElement("span"); why.textContent = { high: "الخريطة شايفة كل الروابط لهالجزء.", medium: "ممكن الخريطة ما شايفة كل شي حواليه. راجع هالنقاط:", low: "ممكن في شي بيستعمله والخريطة ما شايفته. تأكد قبل ما تحذف أو تعدّل:" }[C.level];
+    head.appendChild(tag); head.appendChild(why); box.appendChild(head);
+    if (C.level !== "high") { var ul = document.createElement("ul"); C.reasons.forEach(function (r) { var li = document.createElement("li"); li.textContent = r; ul.appendChild(li); }); box.appendChild(ul); }
   }
 
   function choose(id, scroll) {

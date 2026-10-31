@@ -53,10 +53,12 @@ function build(root, opt) {
     if (a.files.length) { delete a.project; delete a.files; appr = Object.assign(a, { demo: false, label: name, note: 'هاي الصلاحيات الدائمة المحفوظة بملفات إعدادات Claude Code بس. الموافقات اللي بتضغط عليها «نعم» مرة وحدة ما بتنحفظ، فما بقدر أشوفها هون.' }); }
     else appr = { demo: false, label: name, note: 'ما لقيت ملف إعدادات Claude Code بهالمشروع (.claude/settings.local.json)، يعني ما في صلاحيات دائمة محفوظة. الموافقات اللي بتضغط عليها «نعم» مرة وحدة ما بتنحفظ.', rules: [], mode: null, dirs: [], hooks: [], summary: { capKeys: [], allowed: 0, denied: 0, byRisk: { red: 0, yellow: 0, green: 0 }, sentence: 'ما في صلاحيات دائمة محفوظة بهالمشروع.' } };
   }
-  const slim = { nodes: graph.nodes.map((n) => ({ id: n.id, name: n.name, file: n.file, kind: n.kind, start: n.start, parent: n.parent, caps: n.caps })), edges: graph.edges.map((e) => ({ from: e.from, to: e.to, how: e.how })) };
+  const slim = { nodes: graph.nodes.map((n) => ({ id: n.id, name: n.name, file: n.file, kind: n.kind, start: n.start, parent: n.parent, caps: n.caps })), edges: graph.edges.map((e) => ({ from: e.from, to: e.to, how: e.how })),
+    facts: graph.facts, dataRefs: graph.dataRefs, pkg: graph.pkg, problems: graph.problems.map((p) => ({ file: p.file })) };
   const project = { name, stats: { files: graph.stats.files, functions: graph.stats.functions, edges: graph.stats.edges, areas: grouped.stats.areas, parts: grouped.stats.parts }, warnings };
   let html = fs.readFileSync(path.join(__dirname, 'map', 'template.html'), 'utf8');
   const put = (k, v) => { html = html.split('/*' + k + '*/null').join(JSON.stringify(v).replace(/</g, '\\u003c')); };
+  html = html.split('/*CONFJS*/').join(fs.readFileSync(path.join(__dirname, 'analyzer', 'confidence.js'), 'utf8').replace(/<\/script/gi, '<\\/script'));
   put('GRAPH', slim); put('AREAS', grouped.areas); put('RESULTS', null); put('APPROVALS', appr); put('PROJECT', project);
   return { html, graph, grouped, project, appr };
 }
