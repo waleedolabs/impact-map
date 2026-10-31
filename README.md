@@ -1,11 +1,33 @@
 # خريطة الأثر · Impact Map
 
+![License: MIT](https://img.shields.io/badge/license-MIT-blue) ![Node 18+](https://img.shields.io/badge/node-18%2B-green) ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-7aa2ff) ![Runs locally](https://img.shields.io/badge/runs-locally%2C%20nothing%20uploaded-lightgrey)
+
+<p align="center"><img src="docs/map.png" alt="خريطة المشروع: اختر جزءاً وشوف شو رح يتأثر لو عدّلته أو حذفته" width="900"></p>
+
+*مشروع تجريبي صغير. الأزرق: الجزء المختار. البرتقالي: يتأثر مباشرة. الأصفر المتقطع: قد يتأثر. الأخضر: سليم.*
+
 **شو هي؟** أداة بتقرأ كود مشروعك (JavaScript / TypeScript / React / HTML) وبتطلّعلك صفحة وحدة فيها خريطتين:
 
 1. **خريطة المشروع:** أجزاء مشروعك وكيف مرتبطة ببعض. اضغط على أي جزء، وتحت الخريطة بتشوف جنب بعض **«لو عدّلته»** و**«لو حذفته»**: شو رح يتأثر **قبل** ما تلمس شي. زر **«كل التفاصيل»** بيعرض كل دالة بالمشروع كمربع لحالها.
 2. **خريطة الصلاحيات:** (بستايل الهاكر) الصلاحيات الدائمة اللي سمحت فيها لـ Claude Code، وشو تفرّع عن كل وحدة، وأي أجزاء من مشروعك بتتأثر.
 
 كل شي بيشتغل على جهازك. ما بيتصل بالإنترنت وما بيرفع شي لأي مكان.
+
+## خلّي Claude يستعين بالخريطة كل مرة
+
+بدل ما تذكّره بكل خطوة، قله مرة وحدة بأي مشروع:
+
+> **«استعن بخريطة الأثر في كل خطوة: قبل ما تعدّل أو تحذف شي شوف مين بيعتمد عليه وقلي مستوى الثقة، وبعد ما تخلّص حدّث الخريطة.»**
+
+أو شغّل **`/impact-map-keep`**: بيضيف قاعدة دائمة لملف `CLAUDE.md` بمشروعك (بتشوفها وبتقدر تشيلها بـ `/impact-map-keep off`)، فبتنطبق على كل الجلسات الجاية بدون ما تعيدها.
+
+شو بيصير بعدها:
+
+- **قبل أي تعديل أو حذف** بيسأل الخريطة، وبيقلك بجملتين مين بيعتمد على اللي رح يلمسه، ومستوى الثقة.
+- **إذا في شي بيعتمد عليه** بيحدّثه بنفس التعديل أو بينبّهك، وما بيحذف شي مرتبط (أو ثقته متوسطة/منخفضة) قبل ما توافق.
+- **بعد ما يخلّص** بيعيد بناء الخريطة فبتبقى مطابقة للكود، وبيشغّل الاختبارات.
+
+الخريطة بتساعده يقرر، وما بتغني عن تشغيل الكود. وبهالوضع ما بنحكم عليها بالتجربة الحقيقية بعد (ما انجرّب بجلسة Claude Code حية)؛ هي تعليمات بتنقرا من الإضافة وبتتبع Claude لها.
 
 ## الاستخدام داخل Claude Code (الأسهل)
 
@@ -95,6 +117,10 @@ claude plugin update impact-map@impact-map
 
 `hook/permission_hook.js` سكربت بيصنّف أوامر Claude Code قبل تنفيذها (آمن / بحذر / خطر) وبيسأل بجملة بسيطة. **تجريبي**: ما اتجرّب جوا جلسة Claude Code حقيقية، وبينشر منه تصنيف الصلاحيات المستعمل هون. التفاصيل والأرقام بـ`research/`.
 
+## مساهمة وبلاغات
+
+ملاحظاتك أهم شي بهالمرحلة، خصوصاً: **مشروع الأداة غلطت فيه** (قالت «ما حدا بيعتمد عليه» وانكسر شي). افتح Issue وحط اسم الملف وشو انكسر. التفاصيل بـ `CONTRIBUTING.md`.
+
 ## بالتطوير
 
 ```
@@ -113,6 +139,8 @@ Impact Map reads a JavaScript / TypeScript / React / HTML project and builds one
 Everything runs locally. No network, nothing uploaded.
 
 Inside Claude Code (as a plugin): `/plugin marketplace add waleedolabs/impact-map`, then `/plugin install impact-map@impact-map`.
+To make Claude use the map on every change, say once: "use the impact map at every step: before you edit or delete anything, check who depends on it and tell me the confidence, and refresh the map when you finish", or run `/impact-map-keep` (adds a standing rule to the project's `CLAUDE.md`; `/impact-map-keep off` removes it). Claude then checks the map before risky edits, will not delete anything others depend on (or with medium/low confidence) without your confirmation, and rebuilds the map afterwards. This mode is instructions that Claude follows; it has not been tested in a live Claude Code session yet.
+
 Then run `/impact-map`, or just ask "what breaks if I delete accounts.js?" and Claude answers from the map.
 Update later with `claude plugin marketplace update impact-map` and `claude plugin update impact-map@impact-map`, then start a new session.
 

@@ -53,6 +53,38 @@ Summarise in plain words: which are dangerous, and what Claude can now do withou
 Say clearly: it only sees STANDING permissions. A one-time "Yes" is not saved anywhere, so it cannot be listed. The user's personal
 settings file is not read; if they want it included they must copy it somewhere you can read and pass `--user-settings <copy>`.
 
+## 4. Keep the map in the loop (when the user asks: "keep the map updated", "use the map before you change anything", "استعن بالخريطة", or runs /impact-map-keep)
+
+This turns the map into a safety check that Claude uses on every change, so nothing gets broken by accident.
+
+**Before** you edit in a way that can affect other code (changing a function's inputs or behaviour, renaming, moving, or deleting):
+1. Make sure the graph is fresh: if `PROJECT/.impact/graph.json` is missing or older than the code, rebuild (section 1 command).
+2. Ask the map about the target (section 2: `query.js`, with `--delete` for deletions).
+3. Tell the user in one or two plain sentences: who depends on it directly, and the **Confidence** level with its reasons.
+4. Act on it:
+   - Direct dependents exist: update them in the same change, or tell the user which ones need attention before you finish.
+   - Deleting: if anything depends on it, or Confidence is MEDIUM or LOW, do not delete until the user confirms. Name the files to look at.
+   - Confidence MEDIUM or LOW: read the files named in the reasons before deciding. The map cannot see those links.
+5. Small edits that stay inside one function and keep its inputs and outputs the same do not need a check.
+
+**After** you finish a change (a batch of edits, not every line): rebuild the map and `graph.json` with the same command so the page matches the code.
+Say something only if the picture changed (a new part, a removed part, a new dependency). Then run the project's tests if it has them.
+
+Never say "safe". Say what the map sees and what it cannot see. The map helps you decide; it does not replace running the code.
+
+**Standing rule block for `CLAUDE.md`** (used by `/impact-map-keep`; keep the two marker lines exactly):
+
+```
+<!-- impact-map:start -->
+## Impact map (kept up to date)
+This project has an impact map (plugin `impact-map`). Follow these rules on every task, without being asked:
+- Before changing how a function behaves, renaming, moving, or deleting anything: run the impact-map skill's query for it, tell me who depends on it and the confidence level.
+- Never delete something that other code depends on, or when the confidence is medium or low, until I confirm.
+- After a batch of changes: rebuild the map (`.impact/impact-map.html`) so it matches the code, and run the tests.
+- The map is an estimate, not a guarantee: say what it cannot see.
+<!-- impact-map:end -->
+```
+
 ## Rules
 
 - This is an estimate from reading the code, not a guarantee. Say so when the answer matters (before a deletion).

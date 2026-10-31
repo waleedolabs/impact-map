@@ -2,3 +2,4 @@ node_modules/
 .impact/
 variants/
 *.png
+!docs/*.png
