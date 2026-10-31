@@ -25,6 +25,11 @@ Everything runs on your computer. It does not connect to the internet and upload
 
 ```
 /plugin marketplace add waleedolabs/impact-map
+```
+
+Send them **one at a time**: `/plugin` accepts a single line per message, so pasting both lines together fails with "/plugin only works on a single line". Wait for the first to finish, then send the second. (Or run them in a terminal as `claude plugin marketplace add waleedolabs/impact-map` and `claude plugin install impact-map@impact-map`.)
+
+```
 /plugin install impact-map@impact-map
 ```
 
@@ -62,6 +67,11 @@ Install it once as a plugin, then just talk to Claude:
 
 ```
 /plugin marketplace add waleedolabs/impact-map
+```
+
+Send them **one at a time**: `/plugin` accepts a single line per message, so pasting both lines together fails with "/plugin only works on a single line". Wait for the first to finish, then send the second. (Or run them in a terminal as `claude plugin marketplace add waleedolabs/impact-map` and `claude plugin install impact-map@impact-map`.)
+
+```
 /plugin install impact-map@impact-map
 ```
 

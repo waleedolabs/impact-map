@@ -25,6 +25,11 @@
 
 ```
 /plugin marketplace add waleedolabs/impact-map
+```
+
+ابعتهم **واحد واحد**: `/plugin` بيقبل سطراً واحداً بكل رسالة، فلو لصقت الأمرين مع بعض بيطلع خطأ «/plugin only works on a single line». استنّى الأول يخلص وبعدين ابعت التاني. (أو شغّلهم بالطرفية: `claude plugin marketplace add waleedolabs/impact-map` و`claude plugin install impact-map@impact-map`.)
+
+```
 /plugin install impact-map@impact-map
 ```
 
@@ -62,6 +67,11 @@
 
 ```
 /plugin marketplace add waleedolabs/impact-map
+```
+
+ابعتهم **واحد واحد**: `/plugin` بيقبل سطراً واحداً بكل رسالة، فلو لصقت الأمرين مع بعض بيطلع خطأ «/plugin only works on a single line». استنّى الأول يخلص وبعدين ابعت التاني. (أو شغّلهم بالطرفية: `claude plugin marketplace add waleedolabs/impact-map` و`claude plugin install impact-map@impact-map`.)
+
+```
 /plugin install impact-map@impact-map
 ```
 
