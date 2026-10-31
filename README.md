@@ -14,9 +14,12 @@ tests/      corpora + scoring      real and independently written tool calls, la
 
 `approvals/approvals.js` reads a project's `.claude/settings.json` / `settings.local.json` (and a user settings file if given)
 and says, in plain Arabic, what each standing permission can do at its worst, and what Claude can now do without asking.
-The map page has a second mode, "الصلاحيات" (hacker look: black background, neon green). Same map: every part shows what its own code can do
-(NET, STO, KEY, AI, DB, CLIP, SND, SRV, found by scanning each function's lines, spot-checked by hand against worker.js and index.html) and turns
-red or amber when the permissions you gave Claude would let it misuse that capability. The page published with this repo shows EXAMPLE approvals only.
+The map page has a second mode, "الصلاحيات" (hacker look: black background, neon green) with its OWN map:
+Claude in the centre, the permissions you allowed around it (grouped: files, commands, internet, external apps, agents, general mode, protections),
+and a tap on a permission makes it the centre of a new map showing what branches from it (what it can do) and which parts of your project
+that reaches (using what each part's own code does: NET, STO, KEY, AI, DB, CLIP, SND, SRV, found by scanning function lines and spot-checked by hand).
+Boxes are pushed apart automatically; every one of the 18 views of the example data was checked for overlaps (none).
+The page published with this repo shows EXAMPLE approvals only.
 
 Checked on 70 rules written by an independent agent and rated by two independent reviewers (tool frozen before rating):
 of 39 rules both reviewers called red, the first version flagged 33 and, after general fixes (same data, so not independent), 37.

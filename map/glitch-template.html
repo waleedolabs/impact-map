@@ -167,6 +167,13 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
 @media (prefers-reduced-motion: no-preference) { .prompt::after { animation: blink 1.1s steps(2, start) infinite; } @keyframes blink { to { visibility: hidden; } } }
 .demo { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--indirect-bg); border: 1px dashed var(--indirect); font-size: .875rem; }
 .lead { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--bg); font-weight: 600; line-height: 1.8; border-inline-start: 5px solid var(--removed); }
+#permMap { display: block; width: 100%; height: auto; max-width: 600px; margin: 0 auto; }
+.rowbtn { cursor: pointer; }
+.rowbtn:hover { filter: brightness(1.2); }
+.rowbtn:focus-visible { outline: 3px solid var(--target); outline-offset: 2px; }
+.back { font: inherit; font-weight: 600; padding: 7px 14px; border-radius: 10px; border: 1px solid var(--target); background: transparent; color: var(--target); cursor: pointer; justify-self: start; }
+.back:focus-visible { outline: 3px solid var(--target); outline-offset: 2px; }
+.chain { margin: 0; padding: 8px 10px; border-radius: 10px; background: var(--bg); font-size: .9375rem; line-height: 1.8; }
 </style>
 </head>
 <body>
@@ -192,6 +199,7 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
         </defs>
         <g id="treeLayer"></g><g id="flowLayer"></g><g id="nodeLayer"></g>
       </svg>
+      <svg id="permMap" role="group" aria-label="خريطة الصلاحيات" hidden></svg>
       <ul class="legend" id="legendMap" aria-label="دليل الألوان">
         <li><span class="dot target"></span>ما ستعدّله</li>
         <li><span class="dot removed"></span>ما سيُحذف</li>
@@ -199,11 +207,11 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
         <li><span class="dot indirect"></span>قد يتأثر</li>
         <li><span class="dot safe"></span>سليم</li>
       </ul>
-      <ul class="legend" id="legendHack" aria-label="دليل وضع الصلاحيات" hidden>
-        <li><span class="dot removed"></span>خطر: قدرة حساسة وClaude يقدر عليها بدون سؤال</li>
+      <ul class="legend" id="legendHack" aria-label="دليل خريطة الصلاحيات" hidden>
+        <li><span class="dot removed"></span>خطر</li>
         <li><span class="dot direct"></span>انتباه</li>
-        <li><span class="dot safe"></span>هادئ</li>
-        <li class="tags">NET إنترنت · STO حفظ بالجهاز · KEY مفتاح سري · AI ذكاء اصطناعي · DB قاعدة بيانات · CLIP نسخ ومشاركة · SND صوت · SRV يستقبل طلبات</li>
+        <li><span class="dot safe"></span>آمن</li>
+        <li class="tags">المركز ← الصلاحيات اللي سمحت فيها ← اضغط صلاحية لتشوف شو تفرّع منها ← الأجزاء اللي بتتأثر.</li>
       </ul>
     </section>
 
@@ -481,97 +489,220 @@ body.hack .appr, body.hack .rule { background: rgba(57,255,20,.04); }
   function choose(id, scroll) {
     if (id === "core") return;
     if (id !== state.sel) state.sel = id;
-    if (HACK) renderPerm(); else render();
+    render();
     if (scroll) { var r = $("panel").getBoundingClientRect(); if (r.top > window.innerHeight * 0.75 || r.bottom < 0) { try { $("panel").scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} } }
   }
   $("mModify").addEventListener("click", function () { state.mode = "modify"; render(); });
   $("mDelete").addEventListener("click", function () { state.mode = "delete"; render(); });
 
-  // ---- permissions mode: the same map, hacker style -----------------------------------------------
-  var HACK = false;
-  var MAP_INTRO = $("intro").textContent;
-  var POW = {}; ((APPR && APPR.summary && APPR.summary.capKeys) || []).forEach(function (k) { POW[k] = 1; });
-  var CAPNAME = { NET: "بيتصل بالإنترنت", STO: "بيحفظ بيانات على الجهاز", KEY: "بيستعمل مفتاحاً سرياً", AI: "بيرسل كلامك لخدمة ذكاء اصطناعي", DB: "بيكتب على قاعدة بيانات", CLIP: "بينسخ أو بيشارك خارج اللعبة", SND: "صوت أو اهتزاز", SRV: "بيستقبل طلبات من الإنترنت" };
-  function unitCaps(u) {
-    var c = {};
-    u.members.forEach(function (m) { (NODE[m].caps || []).forEach(function (k) { (c[k] = c[k] || []).push(m); }); });
-    return c;
+  // ---- permissions mode: its own map (centre -> permissions -> what branches from each) ------------
+  var HACK = false, MAP_INTRO = $("intro").textContent;
+  var PM = $("permMap"), PV = { view: "top", rule: null, sel: null };
+  var UNITS = order.filter(function (g) { return g.kind === "leaf" || (g.kind === "area" && !g.leaves.length); });
+  function unitCaps(u) { var c = {}; u.members.forEach(function (m) { (NODE[m].caps || []).forEach(function (k) { (c[k] = c[k] || []).push(m); }); }); return c; }
+  function unitName(u) { return u.kind === "leaf" ? u.name + " · " + DISP[u.area].name : u.name; }
+  var CAPLBL = { delete: "يمسح ملفات", send: "يرسل للإنترنت", install: "يثبّت برامج", code: "يشغّل أي كود", secrets: "يقرأ الأسرار", outside: "برا المشروع", modify: "يعدّل ملفات" };
+  var CAPSTATE = { delete: "danger", send: "danger", install: "danger", code: "danger", secrets: "danger", outside: "watch", modify: "watch" };
+  var CAPEXPL = { delete: "يقدر يمسح ملفات بدون تراجع.", send: "يقدر يرسل بيانات للإنترنت أو ينشر.", install: "يقدر ينزّل ويثبّت برامج وحزماً على جهازك.", code: "يقدر يشغّل أي كود، فكل شي ممكن.", secrets: "يقدر يقرأ ملفات سرية: مفاتيح وكلمات سر.", outside: "يقدر يوصل لملفات برا مجلد المشروع.", modify: "يقدر يعدّل الملفات بدون ما يسألك." };
+  var CATS = [
+    { id: "files", name: "الملفات", tools: ["Read", "Edit", "Write", "MultiEdit", "NotebookEdit", "Glob", "Grep", "LS", "additionalDirectories"] },
+    { id: "cmd", name: "الأوامر", tools: ["Bash"] },
+    { id: "net", name: "الإنترنت", tools: ["WebFetch", "WebSearch"] },
+    { id: "apps", name: "تطبيقات خارجية", tools: ["mcp"] },
+    { id: "agents", name: "وكلاء ومهارات", tools: ["Task", "Agent", "Skill", "TodoWrite"] },
+    { id: "mode", name: "الوضع العام", tools: ["mode"] },
+    { id: "deny", name: "الحمايات", tools: [] }
+  ];
+  var SRC = { user: "كل مشاريعك", project: "هالمشروع (مشترك)", local: "هالمشروع (عندك بس)" };
+  var RISKS = { red: 2, yellow: 1, green: 0 };
+  function parseRaw(raw) { var m = /^([A-Za-z_][\w-]*(?:__[\w.-]+)*)(?:\(([\s\S]*)\))?$/.exec(raw); return { tool: m ? m[1] : raw, spec: m ? m[2] : undefined }; }
+  function toolOfRule(r) { if (r.isMode) return "mode"; if (r.raw.indexOf("additionalDirectories") === 0) return "additionalDirectories"; var t = parseRaw(r.raw).tool; return t.indexOf("mcp__") === 0 ? "mcp" : t; }
+  function catOf(r) { if (r.kind === "deny") return "deny"; var t = toolOfRule(r); for (var i = 0; i < CATS.length; i++) if (CATS[i].tools.indexOf(t) >= 0) return CATS[i].id; return "agents"; }
+  function shortOf(r) {
+    if (r.isMode) return "وضع " + r.raw.replace("mode: ", "");
+    if (r.raw.indexOf("additionalDirectories") === 0) return "مجلد " + r.raw.split(": ")[1];
+    var q = parseRaw(r.raw), t = q.tool, sp = q.spec;
+    if (r.kind === "deny") return "ممنوع " + (sp || t);
+    if (t === "Bash") { if (sp === undefined || sp === "*") return "أي أمر"; var pre = sp.replace(/(:\*|\s?\*)$/, ""); return pre; }
+    if (["Edit", "Write", "MultiEdit", "NotebookEdit"].indexOf(t) >= 0) return "تعديل" + (sp ? " " + sp : "");
+    if (t === "Read") return "قراءة" + (sp ? " " + sp : "");
+    if (t === "WebFetch") return sp ? sp.replace(/^domain:/, "") : "أي موقع";
+    if (t === "WebSearch") return "بحث";
+    if (t.indexOf("mcp__") === 0) { var p = t.split("__"); return p[2] ? p[1] + "/" + p[2] : p[1]; }
+    return t;
   }
-  function permState(u) {
-    var c = unitCaps(u);
-    if ((c.KEY || c.AI || c.DB) && (POW.code || POW.secrets || POW.send || POW.delete)) return "danger";
-    if ((c.NET || c.STO || c.CLIP || c.SRV) && (POW.send || POW.modify || POW.code)) return "watch";
-    return "ok";
+  function stOf(risk) { return risk === "red" ? "danger" : risk === "yellow" ? "watch" : "ok"; }
+  function worstSt(list) { var w = "ok"; list.forEach(function (s) { if (s === "danger" || (s === "watch" && w === "ok")) w = s; }); return w; }
+  function capsOfRule(r) {
+    var t = toolOfRule(r), c = (r.tags || []).filter(function (x, i, a) { return a.indexOf(x) === i && CAPLBL[x]; });
+    if (["Edit", "Write", "MultiEdit", "NotebookEdit"].indexOf(t) >= 0 && c.indexOf("modify") < 0) c.unshift("modify");
+    if (r.isMode && r.raw === "mode: acceptEdits" && c.indexOf("modify") < 0) c.push("modify");
+    return r.kind === "deny" ? [] : c;
   }
-  var PBADGE = { danger: ["✕", "b-removed"], watch: ["!", "b-direct"], ok: ["✓", "b-safe"] };
-  function paintPerms() {
-    order.forEach(function (d) {
-      var c = unitCaps(d), st = permState(d), ne = nodeEls[d.id], tags = Object.keys(c);
-      if (d.kind === "area" && d.leaves.length) { tags = []; d.leaves.forEach(function (l) { Object.keys(unitCaps(l)).forEach(function (k) { if (tags.indexOf(k) < 0) tags.push(k); }); }); }
-      ne.g.setAttribute("class", "node " + d.kind + " pm-" + st + (d.id === state.sel ? " sel" : ""));
-      ne.g.setAttribute("aria-pressed", d.id === state.sel ? "true" : "false");
-      ne.s.textContent = tags.length ? tags.join(" ") : "—";
-      ne.s.style.fontSize = ""; var sw = 0; try { sw = ne.s.getComputedTextLength(); } catch (e) {}
-      var smax = pos[d.id].w - 12; if (sw > smax) ne.s.style.fontSize = Math.max(6, 9 * smax / sw).toFixed(2) + "px";
-      ne.g.setAttribute("aria-label", d.name + ": " + (st === "danger" ? "خطر" : st === "watch" ? "انتباه" : "هادئ") + (tags.length ? " (" + tags.join(" ") + ")" : ""));
-      var bd = PBADGE[st]; ne.badge.setAttribute("class", "badge " + bd[1]); ne.badge.setAttribute("visibility", "visible"); ne.bt.textContent = bd[0];
+  function allRules() {
+    var rs = APPR ? APPR.rules.slice() : [];
+    if (APPR && APPR.mode && APPR.mode.risk !== "green") rs.push({ isMode: true, raw: "mode: " + APPR.mode.value, kind: "allow", risk: APPR.mode.risk, plain: APPR.mode.text, worst: APPR.mode.text, tags: APPR.mode.value === "bypassPermissions" ? ["delete", "send", "install", "code"] : [], scopeText: SRC[APPR.mode.source] || "" });
+    return rs;
+  }
+  function topTree() {
+    var rs = allRules(), groups = [];
+    rs.forEach(function (r, i) { r._i = i; });
+    CATS.forEach(function (c) {
+      var mine = rs.filter(function (r) { return catOf(r) === c.id; }).sort(function (a, b) { return RISKS[b.risk] - RISKS[a.risk]; });
+      if (!mine.length) return;
+      var shown = mine.length > 3 ? mine.slice(0, 2) : mine, hidden = mine.length > 3 ? mine.slice(2) : [];
+      var kids = shown.map(function (r) { var cp = capsOfRule(r); return { id: "r" + r._i, kind: "rule", rule: r, label: shortOf(r), sub: r.kind === "deny" ? "ممنوع" : (cp[0] ? CAPLBL[cp[0]] : "آمن"), state: r.kind === "deny" ? "ok" : stOf(r.risk) }; });
+      if (hidden.length) kids.push({ id: "more:" + c.id, kind: "more", rules: hidden, label: "+" + hidden.length + " أخرى", sub: "", state: worstSt(hidden.map(function (r) { return stOf(r.risk); })) });
+      groups.push({ node: { id: "cat:" + c.id, kind: "cat", cat: c, rules: mine, label: c.name, sub: mine.length + " صلاحية", state: c.id === "deny" ? "ok" : worstSt(mine.map(function (r) { return stOf(r.risk); })) }, kids: kids });
     });
-    var fl = $("flowLayer"); while (fl.firstChild) fl.removeChild(fl.firstChild);
-    nodeEls.core.g.setAttribute("class", "node core");
+    return { center: { id: "c", kind: "center", label: "صلاحيات Claude", sub: rs.filter(function (r) { return r.kind === "allow"; }).length + " دائمة" }, groups: groups };
   }
-  function unitLabel(u) { return u.kind === "leaf" ? u.name + " · " + DISP[u.area].name : u.name; }
-  function renderPerm() {
-    paintPerms();
-    var d = DISP[state.sel], p = $("permPanel"); p.textContent = "";
-    var leaves = d.kind === "area" && d.leaves.length ? d.leaves : [d], c = {};
-    leaves.forEach(function (l) { var x = unitCaps(l); Object.keys(x).forEach(function (k) { c[k] = (c[k] || []).concat(x[k]); }); });
-    var keys = Object.keys(c);
-    function add(tag, cls, text, parent) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; (parent || p).appendChild(e); return e; }
-    add("h2", "", unitLabel(d));
-    add("p", "sel-desc", d.desc);
-    if (APPR) { if (APPR.demo) add("p", "demo", "موافقات تجريبية للمثال، مو موافقاتك الحقيقية."); add("p", "lead", APPR.summary.sentence); }
-    add("h3", "", "شو بيقدر هالجزء يعمل (من كوده)");
-    if (!keys.length) add("p", "safe-line", "ما لقيت فيه شي بيتصل بالإنترنت أو بيحفظ بيانات أو بيستعمل أسراراً. بيشتغل داخلياً.");
-    keys.forEach(function (k) {
-      var r = add("div", "rule r-" + (k === "KEY" || k === "AI" || k === "DB" ? "red" : k === "SND" ? "green" : "yellow"), null);
-      add("b", "", "[" + k + "] " + CAPNAME[k], r);
-      var uniq = c[k].filter(function (m, i, a) { return a.indexOf(m) === i; });
-      var m = add("span", "meta", uniq.slice(0, 4).map(function (id) { return fnText(id); }).join("، ") + (uniq.length > 4 ? " وغيرها (" + uniq.length + ")" : ""), r);
-    });
-    add("h3", "", "شو سمحت لـ Claude عليه، بدون ما يسألك");
-    var lines = [];
-    if (!APPR) lines.push(["green", "ما في موافقات محمّلة بعد."]);
-    else {
-      if (POW.modify) lines.push(["yellow", "يقدر يعدّل كود هالجزء."]);
-      if (POW.delete) lines.push(["red", "يقدر يمسح الملفات اللي فيها هالجزء."]);
-      if (POW.code && keys.length) lines.push(["red", "يقدر يشغّل أي كود، وممكن يستعمل قدرات هالجزء (" + keys.join(" ") + ") لحسابه."]);
-      if (POW.secrets && (c.KEY || c.AI)) lines.push(["red", "يقدر يقرأ الملفات السرية، وهالجزء بيستعمل مفتاحاً سرياً."]);
-      if (POW.send && (c.NET || c.AI || c.SRV)) lines.push(["red", "يقدر يرسل بيانات للإنترنت، وهالجزء أصلاً بيتواصل مع الإنترنت."]);
-      if (POW.outside) lines.push(["yellow", "يقدر يوصل لملفات برا المشروع."]);
-      if (!lines.length) lines.push(["green", "ما سمحت له بشي دائم بيمس هالجزء."]);
-    }
-    lines.forEach(function (l) { var r = add("div", "rule r-" + l[0], null); add("b", "", l[1], r); });
-    if (APPR) {
-      var det = add("details", "", null), sm = add("summary", "", "كل الصلاحيات الدائمة (" + APPR.summary.allowed + ")", det);
-      ["red", "yellow", "green"].forEach(function (g) {
-        APPR.rules.filter(function (r) { return r.risk === g; }).forEach(function (r) {
-          var x = add("div", "rule r-" + g, null, det); x.style.marginTop = "6px";
-          add("b", "", r.plain, x); add("span", "worst", (r.kind === "deny" ? "" : "أسوأ شي بيغطيه: ") + r.worst, x);
-          var m2 = add("span", "meta", r.scopeText + " · ", x); add("code", "", r.raw, m2);
-        });
+  function affectedKids(cap) {
+    function withCaps(keys) { return UNITS.filter(function (u) { var c = unitCaps(u); return keys.some(function (k) { return c[k]; }); }); }
+    var list;
+    if (cap === "modify" || cap === "delete" || cap === "code") return [{ id: "all:" + cap, kind: "all", label: "كل أجزاء المشروع", sub: UNITS.length + " جزء", state: cap === "modify" ? "watch" : "danger" }];
+    if (cap === "install") return [{ id: "ext:install", kind: "ext", label: "برامج جهازك", sub: "", state: "danger" }];
+    if (cap === "outside") return [{ id: "ext:outside", kind: "ext", label: "ملفاتك برا المشروع", sub: "", state: "watch" }];
+    list = cap === "send" ? withCaps(["NET", "AI", "SRV"]) : withCaps(["KEY", "STO", "DB"]);
+    var kids = list.slice(0, 3).map(function (u) { var c = unitCaps(u); return { id: "u:" + cap + ":" + u.id, kind: "unit", unit: u, label: u.name, sub: Object.keys(c).join(" "), state: (c.KEY || c.AI || c.DB) ? "danger" : "watch" }; });
+    if (list.length > 3) kids.push({ id: "umore:" + cap, kind: "umore", units: list.slice(3), label: "+" + (list.length - 3) + " أجزاء", sub: "", state: "watch" });
+    if (!kids.length) kids.push({ id: "none:" + cap, kind: "ext", label: "ما لقيت جزء متأثر", sub: "", state: "ok" });
+    return kids;
+  }
+  function ruleTree(r) {
+    var caps = capsOfRule(r), groups = [];
+    caps.forEach(function (cap) { groups.push({ node: { id: "cap:" + cap, kind: "cap", cap: cap, label: CAPLBL[cap], sub: "", state: CAPSTATE[cap] }, kids: affectedKids(cap) }); });
+    if (!groups.length) groups.push({ node: { id: "cap:none", kind: "cap", cap: "none", label: r.kind === "deny" ? "محمي" : "ما فيه أثر خطر", sub: "", state: "ok" }, kids: [] });
+    return { center: { id: "c", kind: "center", label: shortOf(r), sub: r.kind === "deny" ? "ممنوع" : "صلاحية دائمة", state: stOf(r.risk) }, groups: groups };
+  }
+
+  // layout: ellipses for the first and second ring, then push overlapping boxes apart
+  function layoutTree(tree) {
+    var N = [], E = [], c = tree.center; c.x = 0; c.y = 0; c.w = 104; c.h = 46; c.fixed = true; N.push(c);
+    var n = tree.groups.length;
+    tree.groups.forEach(function (g, i) {
+      var a = (n === 1 ? -90 : -90 + i * 360 / n) * Math.PI / 180, o = g.node;
+      o.x = 112 * Math.cos(a); o.y = 175 * Math.sin(a); o.w = 100; o.h = 42; N.push(o); E.push([c, o]);
+      var m = g.kids.length, spread = Math.min(30, 80 / n);
+      g.kids.forEach(function (k, j) {
+        var t = a + (m === 1 ? 0 : -spread + 2 * spread * j / (m - 1)) * Math.PI / 180;
+        k.x = 215 * Math.cos(t); k.y = 310 * Math.sin(t); k.w = 96; k.h = 40; N.push(k); E.push([o, k]);
       });
+    });
+    for (var it = 0; it < 120; it++) {
+      var moved = false;
+      for (var i = 0; i < N.length; i++) for (var j = i + 1; j < N.length; j++) {
+        var A = N[i], B = N[j], dx = B.x - A.x, dy = B.y - A.y, ox = (A.w + B.w) / 2 + 6 - Math.abs(dx), oy = (A.h + B.h) / 2 + 6 - Math.abs(dy);
+        if (ox > 0 && oy > 0) {
+          moved = true;
+          var fa = A.fixed ? 0 : (B.fixed ? 1 : 0.5), fb = B.fixed ? 0 : (A.fixed ? 1 : 0.5);
+          if (ox < oy) { var sx = dx >= 0 ? 1 : -1; A.x -= sx * ox * fa; B.x += sx * ox * fb; }
+          else { var sy = dy >= 0 ? 1 : -1; A.y -= sy * oy * fa; B.y += sy * oy * fb; }
+        }
+      }
+      if (!moved) break;
     }
+    return { N: N, E: E };
+  }
+  function pfit(t, maxw, base) {
+    t.style.fontSize = ""; t.setAttribute("font-size", base); var w = 0; try { w = t.getComputedTextLength(); } catch (e) {}
+    if (w > maxw) t.setAttribute("font-size", Math.max(6, base * maxw / w).toFixed(2));
+  }
+  function pcurve(a, b) {
+    function pt(n, tx, ty) { var dx = tx - n.x, dy = ty - n.y, k = Math.min((n.w / 2) / Math.max(Math.abs(dx), 1e-6), (n.h / 2) / Math.max(Math.abs(dy), 1e-6)); return [n.x + dx * k, n.y + dy * k]; }
+    var p1 = pt(a, b.x, b.y), p2 = pt(b, a.x, a.y), mx = (p1[0] + p2[0]) / 2, my = (p1[1] + p2[1]) / 2, dx = p2[0] - p1[0], dy = p2[1] - p1[1], len = Math.sqrt(dx * dx + dy * dy) || 1;
+    return "M" + p1[0].toFixed(1) + "," + p1[1].toFixed(1) + " Q" + (mx - dy / len * 8).toFixed(1) + "," + (my + dx / len * 8).toFixed(1) + " " + p2[0].toFixed(1) + "," + p2[1].toFixed(1);
+  }
+  function currentTree() { return PV.view === "rule" ? ruleTree(PV.rule) : topTree(); }
+  function drawPerm() {
+    var tree = currentTree(), L = layoutTree(tree);
+    while (PM.firstChild) PM.removeChild(PM.firstChild);
+    var gE = el("g", {}, PM), gN = el("g", {}, PM), minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+    L.E.forEach(function (e) { el("path", { "class": "tree-edge", d: pcurve(e[0], e[1]) }, gE); });
+    L.N.forEach(function (n) {
+      minX = Math.min(minX, n.x - n.w / 2); maxX = Math.max(maxX, n.x + n.w / 2); minY = Math.min(minY, n.y - n.h / 2); maxY = Math.max(maxY, n.y + n.h / 2);
+      var cls = n.kind === "center" ? "node core" + (PV.view === "rule" ? " pm-" + (n.state || "ok") : "") : "node pm-" + n.state;
+      var g = el("g", { "class": cls + (PV.sel === n.id ? " sel" : ""), tabindex: "0", role: "button", "aria-label": n.label + (n.sub ? ": " + n.sub : "") }, gN);
+      el("rect", { "class": "ring", x: n.x - n.w / 2 - 4, y: n.y - n.h / 2 - 4, width: n.w + 8, height: n.h + 8, rx: 13 }, g);
+      el("rect", { "class": "box", x: n.x - n.w / 2, y: n.y - n.h / 2, width: n.w, height: n.h, rx: 10 }, g);
+      var t = el("text", { "class": "t", x: n.x, y: n.y - (n.sub ? 4 : 0), "text-anchor": "middle", "dominant-baseline": "central" }, g); t.textContent = n.label;
+      if (n.sub) { var s2 = el("text", { "class": "sub", x: n.x, y: n.y + 11, "text-anchor": "middle", "dominant-baseline": "central" }, g); s2.textContent = n.sub; pfit(s2, n.w - 10, 9); s2.style.fontSize = s2.getAttribute("font-size") + "px"; }
+      pfit(t, n.w - 10, n.kind === "center" ? 14 : n.kind === "cat" ? 12.5 : 11.5);
+      function go() { onPermNode(n); }
+      g.addEventListener("click", go);
+      g.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+    });
+    PM.setAttribute("viewBox", (minX - 12) + " " + (minY - 12) + " " + (maxX - minX + 24) + " " + (maxY - minY + 24));
+    PM._nodes = L.N;
+  }
+  function onPermNode(n) {
+    if (n.kind === "rule") { PV = { view: "rule", rule: n.rule, sel: null }; }
+    else if (n.kind === "center" && PV.view === "rule") { PV = { view: "top", rule: null, sel: null }; }
+    else { PV.sel = n.id; PV._node = n; }
+    drawPerm(); renderPermPanel();
+    var r = $("permPanel").getBoundingClientRect(); if (r.top > window.innerHeight * 0.75) { try { $("permPanel").scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} }
+  }
+  function openRule(r) { PV = { view: "rule", rule: r, sel: null }; drawPerm(); renderPermPanel(); try { $("permMap").scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} }
+  function renderPermPanel() {
+    var p = $("permPanel"); p.textContent = "";
+    function add(tag, cls, text, parent) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; (parent || p).appendChild(e); return e; }
+    function ruleRow(r, parent) {
+      var x = add("div", "rule rowbtn r-" + (r.kind === "deny" ? "green" : r.risk), null, parent); x.setAttribute("role", "button"); x.tabIndex = 0;
+      add("b", "", r.plain, x); add("span", "worst", (r.kind === "deny" ? "" : "أسوأ شي بيغطيه: ") + r.worst, x);
+      var m = add("span", "meta", (r.scopeText || "") + " · ", x); add("code", "", r.raw, m);
+      x.addEventListener("click", function () { openRule(r); });
+      x.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openRule(r); } });
+    }
+    if (!APPR) { add("h2", "", "صلاحيات Claude"); add("p", "safe-line", "ما في موافقات محمّلة بعد."); return; }
+    if (PV.view === "rule") {
+      var r = PV.rule, caps = capsOfRule(r);
+      var back = add("button", "back", "← كل الصلاحيات"); back.type = "button"; back.addEventListener("click", function () { PV = { view: "top", rule: null, sel: null }; drawPerm(); renderPermPanel(); });
+      add("h2", "", shortOf(r));
+      add("p", "sel-desc", r.plain);
+      add("p", "lead", (r.kind === "deny" ? "" : "أسوأ شي بيغطيه: ") + r.worst);
+      add("p", "meta", (r.scopeText || "") + " · " + r.raw);
+      add("h3", "", "شو تفرّع عنها");
+      if (!caps.length) add("p", "safe-line", r.kind === "deny" ? "هاي حماية: Claude ما بيقدر يعمل هالشي." : "ما فيها قدرة خطرة.");
+      caps.forEach(function (cap) {
+        var ks = affectedKids(cap), txt = ks.map(function (k) { return k.label + (k.sub && k.kind !== "unit" && k.kind !== "umore" ? " (" + k.sub + ")" : ""); }).join("، ");
+        add("p", "chain", "[" + CAPLBL[cap] + "] ← " + txt);
+      });
+      if (PV.sel && PV._node) {
+        var n = PV._node;
+        add("h3", "", n.label);
+        if (n.kind === "cap") add("p", "safe-line", CAPEXPL[n.cap] || "");
+        else if (n.kind === "unit") { var c = unitCaps(n.unit), ks2 = Object.keys(c); add("p", "safe-line", unitName(n.unit) + ": " + n.unit.desc); add("p", "safe-line", "قدراته: " + ks2.join(" ") + " (مكشوفة لهالصلاحية)."); }
+        else if (n.kind === "umore") add("p", "safe-line", n.units.map(unitName).join("، "));
+        else if (n.kind === "all") add("p", "safe-line", "الصلاحية بتغطي كل ملفات المشروع، فكل أجزاءه معرّضة.");
+        else add("p", "safe-line", n.label);
+      }
+      return;
+    }
+    add("h2", "", "صلاحيات Claude");
+    if (APPR.demo) add("p", "demo", "موافقات تجريبية للمثال، مو موافقاتك الحقيقية.");
+    add("p", "lead", APPR.summary.sentence);
+    var selN = PV._node && PV.sel ? PV._node : null;
+    if (selN && (selN.kind === "cat" || selN.kind === "more")) {
+      add("h3", "", selN.kind === "cat" ? selN.label + " (" + selN.rules.length + ")" : selN.label);
+      add("p", "safe-line", "اضغط على صلاحية لتشوف شو تفرّع منها.");
+      (selN.kind === "cat" ? selN.rules : selN.rules).forEach(function (r) { ruleRow(r, p); });
+    } else {
+      add("h3", "", "الأخطر، اضغط وحدة لتشوف شو تفرّع منها");
+      allRules().filter(function (r) { return r.kind === "allow"; }).sort(function (a, b) { return RISKS[b.risk] - RISKS[a.risk]; }).slice(0, 5).forEach(function (r) { ruleRow(r, p); });
+    }
+    var det = add("details", "", null); add("summary", "", "كل الصلاحيات (" + allRules().length + ")", det);
+    allRules().forEach(function (r) { if (!r.isMode) { var w = add("div", "", null, det); w.style.marginTop = "6px"; ruleRow(r, w); } });
   }
   function showTab(which) {
     HACK = which === "perm";
     document.body.classList.toggle("hack", HACK);
     $("tabMap").setAttribute("aria-pressed", String(!HACK)); $("tabAppr").setAttribute("aria-pressed", String(HACK));
+    function setHidden(e, v) { if (v) e.setAttribute("hidden", ""); else e.removeAttribute("hidden"); }
+    setHidden($("map"), HACK); setHidden($("permMap"), !HACK);
     $("panel").hidden = HACK; $("permPanel").hidden = !HACK; $("proof").hidden = HACK;
     $("legendMap").hidden = HACK; $("legendHack").hidden = !HACK; $("hackPrompt").hidden = !HACK;
-    $("intro").textContent = HACK ? "وضع الصلاحيات: كل جزء بيبيّن شو بيقدر يعمل من كوده، ولونه بيبيّن إذا كان الإذن اللي أعطيته لـ Claude بيخليه خطر. اضغط على أي جزء." : MAP_INTRO;
-    if (!HACK) Object.keys(nodeEls).forEach(function (k) { nodeEls[k].s.style.fontSize = ""; });
-    if (HACK) renderPerm(); else render();
-    fit();
+    $("intro").textContent = HACK ? "خريطة الصلاحيات: بالنص Claude، حواليه الصلاحيات اللي سمحت فيها، واضغط على أي صلاحية لتشوف شو تفرّع منها وأي أجزاء بمشروعك بتتأثر." : MAP_INTRO;
+    if (HACK) { PV = { view: "top", rule: null, sel: null }; drawPerm(); renderPermPanel(); } else { render(); fit(); }
   }
   $("tabMap").addEventListener("click", function () { showTab("map"); });
   $("tabAppr").addEventListener("click", function () { showTab("perm"); });
